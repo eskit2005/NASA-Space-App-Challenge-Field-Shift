@@ -3,19 +3,11 @@
 
 ---
 
-## 1. Executive Summary & Theoretical Context
 
-Agricultural decision-making requires reconciling conflicting objectives: maximizing short-term household income, conserving local groundwater, rebuilding depleted soil organic matter, and mitigating climate risk. 
 
-This model formulates the sequence selection phase as a **Multi-Criteria Compromise Programming (CP)** problem within a discrete decision space, based on the foundational research of **Romero & Rehman (1985, 2003)** and **Zeleny (1973, 1974)**, integrated with whole-farm crop sequence modeling by **Detlefsen & Jensen (2007)**.
+## 1. Exhaustive Mathematical Notations & Subscripts
 
-Candidate rotation sequences pre-filtered by agronomic rule engines are first evaluated against **hard physical and economic boundaries** (NASA satellite precipitation limits and farmer upfront cash constraints). Feasible sequences are then mapped onto a normalized multi-criteria hypercube and ranked using an $L_p$ compromise distance metric to identify five distinct operational archetypes.
-
----
-
-## 2. Exhaustive Mathematical Notations & Subscripts
-
-### 2.1. Indices and Subscripts
+### 1.1. Indices and Subscripts
 | Notation | Name | Detailed Definition & Role in Model |
 | :--- | :--- | :--- |
 | $k$ | Sequence Index | Identifies an individual multi-season crop rotation candidate sequence ($k \in \{1, 2, \dots, M\}$). |
@@ -29,7 +21,7 @@ Candidate rotation sequences pre-filtered by agronomic rule engines are first ev
 | $\text{benefit}$ | Benefit Subset Subscript | Designates criteria where higher numerical values are desirable (Net Profit, Soil Nitrogen Delta). |
 | $\text{cost}$ | Cost Subset Subscript | Designates criteria where lower numerical values are desirable (Crop Water Requirement, Market Risk). |
 
-### 2.2. Sets, Variables, and Accents
+### 1.2. Sets, Variables, and Accents
 | Notation | Name | Detailed Definition & Role in Model |
 | :--- | :--- | :--- |
 | $\mathcal{S}$ | Candidate Sequence Set | The complete pool of $M$ valid rotation sequences produced by the preceding rule-based filter. |
@@ -46,7 +38,7 @@ Candidate rotation sequences pre-filtered by agronomic rule engines are first ev
 
 ---
 
-## 3. The 4 Criteria in $\mathcal{J}$ Detailed
+## 2. The 4 Criteria in $\mathcal{J}$ Detailed
 
 The vector $\mathbf{f}(s_k) = [f_{k, \text{profit}}, f_{k, \text{water}}, f_{k, \text{soil}}, f_{k, \text{risk}}]$ quantifies the multidimensional performance of each candidate rotation sequence $s_k$:
 
@@ -59,7 +51,7 @@ The vector $\mathbf{f}(s_k) = [f_{k, \text{profit}}, f_{k, \text{water}}, f_{k, 
 
 ---
 
-## 4. The Complete Mathematical Optimization Program
+## 3. The Complete Mathematical Optimization Program
 
 ### Stage 1: The Hard Boundary Constraints (Feasibility Cut)
 A sequence $s_k \in \mathcal{S}$ is admitted into the feasible decision space $\mathcal{S}_{\text{viable}}$ if and only if it strictly satisfies two physical and economic boundaries:
@@ -125,7 +117,7 @@ To prevent presenting five trivial variations of the same crop sequence, the eng
 
 ---
 
-## 5. Academic Reference to Equation Mapping Matrix
+##4. Academic Reference to Equation Mapping Matrix
 
 This table maps every single component of the mathematical model to verified, peer-reviewed literature with direct Digital Object Identifiers (DOIs):
 
