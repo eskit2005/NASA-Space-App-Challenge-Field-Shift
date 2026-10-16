@@ -59,48 +59,48 @@ We clean and standardize all the data so the optimization step and everything do
 
 ### Stage 5: Multi-Criteria Mathematical Optimization & Compromise Programming
 
-The sequence recommendation engine models the final sequence evaluation and portfolio selection as a Multi-Criteria Compromise Programming (CP) problem over a discrete feasible set $\mathcal{S}_{\text{viable}}$, rooted in the foundational work of Romero & Rehman (1985, 2003) and Zeleny (1974), integrated with agricultural cropping sequence constraints from Detlefsen & Jensen (2007) and Hazell & Norton (1986).
+The sequence recommendation engine models the final sequence evaluation and portfolio selection as a Multi-Criteria Compromise Programming (CP) problem over a discrete feasible set $`\mathcal{S}_{\text{viable}}`$, rooted in the foundational work of Romero & Rehman (1985, 2003) and Zeleny (1974), integrated with agricultural cropping sequence constraints from Detlefsen & Jensen (2007) and Hazell & Norton (1986).
 
 #### 1. The Hard Feasibility Filter (Pruning)
-Before ranking, every pre-filtered sequence $s_k \in \mathcal{S}$ must satisfy non-negotiable physical and liquidity boundaries to enter the feasible set $\mathcal{S}_{\text{viable}}$:
+Before ranking, every pre-filtered sequence $`s_k \in \mathcal{S}`$ must satisfy non-negotiable physical and liquidity boundaries to enter the feasible set $`\mathcal{S}_{\text{viable}}`$:
 
 ```math
 \mathcal{S}_{\text{viable}} = \{ s_k \in \mathcal{S} \mid C_1(s_k) \le B_{\text{cash}} \land W_t(s_k) \le R_t^{\text{NASA}} + I_t^{\max}, \; \forall t \in \mathcal{T} \}
 ```
 
-* **Constraint 1 (Working Capital Wall):** $C_1(s_k) \le B_{\text{cash}}$ ensures upfront input costs in Season 1 (seed, fertilizer, fuel, tillage) do not exceed the farmer's liquid cash reserves, preventing debt failure before harvest (Hazell & Norton 1986).
-* **Constraint 2 (NASA Seasonal Water Ceiling):** $W_t(s_k) \le R_t^{\text{NASA}} + I_t^{\max}$ ensures crop water evapotranspiration ($ET_c$) in each individual season $t$ does not exceed expected satellite rainfall plus maximum irrigation capacity (Allen et al. 1998; Detlefsen & Jensen 2007).
+* **Constraint 1 (Working Capital Wall):** $`C_1(s_k) \le B_{\text{cash}}`$ ensures upfront input costs in Season 1 (seed, fertilizer, fuel, tillage) do not exceed the farmer's liquid cash reserves, preventing debt failure before harvest (Hazell & Norton 1986).
+* **Constraint 2 (NASA Seasonal Water Ceiling):** $`W_t(s_k) \le R_t^{\text{NASA}} + I_t^{\max}`$ ensures crop water evapotranspiration ($`ET_c`$) in each individual season $t$ does not exceed expected satellite rainfall plus maximum irrigation capacity (Allen et al. 1998; Detlefsen & Jensen 2007).
 
 #### 2. Normalization onto the Dimensionless Unit Hypercube [0, 1]
-To prevent scale bias across disparate physical units (BDT, mm, kg N/ha), raw criterion scores $f_{k, j}$ are mapped onto non-dimensional values $\bar{f}_{k, j} \in [0.0, 1.0]$, where $\bar{f}_{k, j} = 1.0$ is the ideal anchor across all viable candidates:
+To prevent scale bias across disparate physical units (BDT, mm, kg N/ha), raw criterion scores $`f_{k, j}`$ are mapped onto non-dimensional values $`\bar{f}_{k, j} \in [0.0, 1.0]`$, where $`\bar{f}_{k, j} = 1.0`$ is the ideal anchor across all viable candidates:
 
-For Benefit Criteria ($j \in \mathcal{J}_{\text{benefit}} = \{\text{profit}, \text{soil}\}$):
+For Benefit Criteria ($`j \in \mathcal{J}_{\text{benefit}} = \{\text{profit}, \text{soil}\}`$):
 
 ```math
 \bar{f}_{k, j} = \frac{f_{k, j} - \min_{i \in \mathcal{S}_{\text{viable}}} f_{i, j}}{\max_{i \in \mathcal{S}_{\text{viable}}} f_{i, j} - \min_{i \in \mathcal{S}_{\text{viable}}} f_{i, j}}
 ```
 
-For Cost Criteria ($j \in \mathcal{J}_{\text{cost}} = \{\text{water}, \text{risk}\}$):
+For Cost Criteria ($`j \in \mathcal{J}_{\text{cost}} = \{\text{water}, \text{risk}\}`$):
 
 ```math
 \bar{f}_{k, j} = \frac{\max_{i \in \mathcal{S}_{\text{viable}}} f_{i, j} - f_{k, j}}{\max_{i \in \mathcal{S}_{\text{viable}}} f_{i, j} - \min_{i \in \mathcal{S}_{\text{viable}}} f_{i, j}}
 ```
 
 #### 3. Compromise Programming Distance Formulation
-The ranking engine identifies the optimal sequence by minimizing the weighted $L_p$ distance metric between a candidate sequence and the Ideal Point $\mathbf{f}^\ast = (1, 1, 1, 1)$:
+The ranking engine identifies the optimal sequence by minimizing the weighted $`L_p`$ distance metric between a candidate sequence and the Ideal Point $`\mathbf{f}^\ast = (1, 1, 1, 1)`$:
 
 ```math
 \min_{s_k \in \mathcal{S}_{\text{viable}}} D_p(s_k) = \left[ \sum_{j \in \mathcal{J}} \left( w_j \cdot (1 - \bar{f}_{k, j}) \right)^p \right]^{1/p}
 ```
 
-**Operational Metric Geometries ($p \in \{1, 2, \infty\}$):**
-* **Linear / Compensatory Metric ($p = 1$, Manhattan Distance):** $`D_1(s_k) = \sum_{j \in \mathcal{J}} w_j \cdot (1 - \bar{f}_{k, j})`$. Models complete substitutability between objectives.
-* **Geometric Compromise Metric ($p = 2$, Euclidean Distance):** $`D_2(s_k) = \sqrt{\sum_{j \in \mathcal{J}} \left( w_j \cdot (1 - \bar{f}_{k, j}) \right)^2}`$. Penalizes severe deficiencies on any single dimension, yielding the balanced compromise 'knee' of the Pareto frontier.
-* **Chebyshev / Minimax Regret Metric ($p = \infty$):** $`D_\infty(s_k) = \max_{j \in \mathcal{J}} \{ w_j \cdot (1 - \bar{f}_{k, j}) \}`$. Minimizes the single worst individual criterion shortfall. Models extreme risk aversion for resource-poor smallholders.
+**Operational Metric Geometries ($`p \in \{1, 2, \infty\}`$):**
+* **Linear / Compensatory Metric ($`p = 1`$, Manhattan Distance):** $`D_1(s_k) = \sum_{j \in \mathcal{J}} w_j \cdot (1 - \bar{f}_{k, j})`$. Models complete substitutability between objectives.
+* **Geometric Compromise Metric ($`p = 2`$, Euclidean Distance):** $`D_2(s_k) = \sqrt{\sum_{j \in \mathcal{J}} \left( w_j \cdot (1 - \bar{f}_{k, j}) \right)^2}`$. Penalizes severe deficiencies on any single dimension, yielding the balanced compromise 'knee' of the Pareto frontier.
+* **Chebyshev / Minimax Regret Metric ($`p = \infty`$):** $`D_\infty(s_k) = \max_{j \in \mathcal{J}} \{ w_j \cdot (1 - \bar{f}_{k, j}) \}`$. Minimizes the single worst individual criterion shortfall. Models extreme risk aversion for resource-poor smallholders.
 
 #### 4. Strategic Final Sequence Portfolio Selection
 Rather than outputting trivial clones of the same crop sequence, the engine extracts distinct, non-dominated operational archetypes along the Pareto frontier (Branke et al. 2004):
-* **Plan 1 (Personalized Compromise Knee):** $`s^\ast_{\text{personalized}} = \arg\min_{s_k \in \mathcal{S}_{\text{viable}}} D_2(s_k)`$ evaluated using elicited weights $\mathbf{w}$.
+* **Plan 1 (Personalized Compromise Knee):** $`s^\ast_{\text{personalized}} = \arg\min_{s_k \in \mathcal{S}_{\text{viable}}} D_2(s_k)`$ evaluated using elicited weights $`\mathbf{w}`$.
 * **Plan 2 (Minimax Risk-Averse Safeguard):** $`s^\ast_{\text{safe}} = \arg\min_{s_k \in \mathcal{S}_{\text{viable}}} D_\infty(s_k)`$ protecting against worst-case market/climate shocks.
 * **Plan 3 (Economic Maximizer):** $`s^\ast_{\text{economic}} = \arg\max_{s_k \in \mathcal{S}_{\text{viable}}} \bar{f}_{k, \text{profit}}`$ (upper cash frontier).
 * **Plan 4 (Water Conservation Anchor):** $`s^\ast_{\text{water}} = \arg\max_{s_k \in \mathcal{S}_{\text{viable}}} \bar{f}_{k, \text{water}}`$ (drought/pumping-constrained anchor).
@@ -112,31 +112,31 @@ Rather than outputting trivial clones of the same crop sequence, the engine extr
 
 | Notation | Type | Unit | Description & Role in Formulation |
 | :--- | :--- | :--- | :--- |
-| $k$ | Index | Dim-less | Sequence identifier ($k \in \{1, \dots, M\}$) for candidate rotation $s_k$. |
+| $k$ | Index | Dim-less | Sequence identifier ($k \in \{1, \dots, M\}$) for candidate rotation $`s_k`$. |
 | $t$ | Index | Dim-less | Chronological season index ($t \in \mathcal{T} = \{1, \dots, T\}$), e.g., Rabi ($t=1$), Kharif-1 ($t=2$), Kharif-2 ($t=3$). |
 | $j$ | Index | Dim-less | Multi-criteria evaluation dimension ($j \in \mathcal{J} = \{\text{profit}, \text{water}, \text{soil}, \text{risk}\}$). |
 | $p$ | Parameter | Dim-less | Minkowski metric power parameter ($p \in [1, \infty]$) defining geometric substitution and risk behavior. |
 | $\mathcal{S}$ | Set | Sets | Complete pool of candidate crop sequences pre-screened by Stage 4 rule engines. |
-| $\mathcal{S}_{\text{viable}}$ | Set | Sets | Subset of candidate sequences satisfying all hard liquidity and water constraints ($\mathcal{S}_{\text{viable}} \subseteq \mathcal{S}$). |
-| $s_k$ | Vector | Tuple | Candidate rotation sequence vector $s_k = (c_{k, 1}, c_{k, 2}, \dots, c_{k, T})$. |
-| $f_{k, j}$ | Variable | Native | Raw performance value of sequence $s_k$ on criterion $j$ (BDT, mm, kg N/ha, 1–5). |
-| $\bar{f}_{k, j}$ | Variable | [0.0, 1.0] | Dimensionless normalized criterion score projected onto unit interval; $1.0$ is ideal. |
-| $w_j$ | Parameter | [0.0, 1.0] | Subjective preference weight assigned to criterion $j$ (from Stage 1 conversation), where $\sum_{j \in \mathcal{J}} w_j = 1$. |
-| $D_p(s_k)$ | Variable | Non-neg | Weighted distance of sequence $s_k$ from the ideal target coordinate $(1, 1, 1, 1)$. (Lower is better). |
-| $B_{\text{cash}}$ | Parameter | BDT / USD | Farmer's available liquid working capital limit for Season 1 input purchases. |
-| $C_1(s_k)$ | Variable | BDT / USD | Upfront cash expenditures (seed, fertilizer, fuel, tillage) required in Season 1 ($t=1$). |
-| $R_t^{\text{NASA}}$ | Parameter | mm | Expected seasonal rainfall depth derived from NASA POWER / GPM satellite observations. |
-| $I_t^{\max}$ | Parameter | mm | Maximum seasonal irrigation capacity (groundwater pumping quota or canal allocation). |
-| $W_t(s_k)$ | Variable | mm | Seasonal crop water evapotranspiration demand ($K_c \times ET_0$) for sequence $s_k$. |
+| $`\mathcal{S}_{\text{viable}}`$ | Set | Sets | Subset of candidate sequences satisfying all hard liquidity and water constraints ($`\mathcal{S}_{\text{viable}} \subseteq \mathcal{S}`$). |
+| $`s_k`$ | Vector | Tuple | Candidate rotation sequence vector $`s_k = (c_{k, 1}, c_{k, 2}, \dots, c_{k, T})`$. |
+| $`f_{k, j}`$ | Variable | Native | Raw performance value of sequence $`s_k`$ on criterion $j$ (BDT, mm, kg N/ha, 1–5). |
+| $`\bar{f}_{k, j}`$ | Variable | [0.0, 1.0] | Dimensionless normalized criterion score projected onto unit interval; $1.0$ is ideal. |
+| $`w_j`$ | Parameter | [0.0, 1.0] | Subjective preference weight assigned to criterion $j$ (from Stage 1 conversation), where $`\sum_{j \in \mathcal{J}} w_j = 1`$. |
+| $`D_p(s_k)`$ | Variable | Non-neg | Weighted distance of sequence $`s_k`$ from the ideal target coordinate $(1, 1, 1, 1)$. (Lower is better). |
+| $`B_{\text{cash}}`$ | Parameter | BDT / USD | Farmer's available liquid working capital limit for Season 1 input purchases. |
+| $`C_1(s_k)`$ | Variable | BDT / USD | Upfront cash expenditures (seed, fertilizer, fuel, tillage) required in Season 1 ($t=1$). |
+| $`R_t^{\text{NASA}}`$ | Parameter | mm | Expected seasonal rainfall depth derived from NASA POWER / GPM satellite observations. |
+| $`I_t^{\max}`$ | Parameter | mm | Maximum seasonal irrigation capacity (groundwater pumping quota or canal allocation). |
+| $`W_t(s_k)`$ | Variable | mm | Seasonal crop water evapotranspiration demand ($`K_c \times ET_0`$) for sequence $`s_k`$. |
 
 #### 6. Detailed Criteria Specification Matrix
 
-| Criterion ($j$) | Objective ($f_{k, j}$) | Unit | Direction | Mathematical Formula | Agronomic & Economic Meaning |
+| Criterion ($j$) | Objective ($`f_{k, j}`$) | Unit | Direction | Mathematical Formula | Agronomic & Economic Meaning |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1. Net Profit** | $f_{k, \text{profit}}$ | BDT/ha | Maximize | $\sum_{t=1}^T (\text{Yield}_{k, t} \times \text{Price}_t - \text{TotalCost}_{k, t})$ | Total multi-season gross margin. Ensures farm household cash-flow viability and debt service capacity. |
-| **2. Water Demand** | $f_{k, \text{water}}$ | mm | Minimize | $\sum_{t=1}^T (K_{c, k, t} \times ET_{0, t}^{\text{NASA}})$ | Cumulative crop evapotranspiration ($ET_c$). Lower values preserve groundwater and reduce diesel/electric pumping bills. |
-| **3. Soil Nitrogen Delta** | $f_{k, \text{soil}}$ | kg N/ha | Maximize | $\sum_{t=1}^T \Delta N_{k, t}$ | Net rotational nitrogen balance. Positive delta from legume fixation (+20 to +50 kg N/ha) offsets cereal soil depletion. |
-| **4. Volatility Risk** | $f_{k, \text{risk}}$ | Index (1–5) | Minimize | $\frac{1}{T} \sum_{t=1}^T \text{RiskFactor}_{k, t}$ | Composite vulnerability score capturing crop perishability, wholesale market price volatility, and drought sensitivity. |
+| **1. Net Profit** | $`f_{k, \text{profit}}`$ | BDT/ha | Maximize | $`\sum_{t=1}^T (\text{Yield}_{k, t} \times \text{Price}_{t} - \text{TotalCost}_{k, t})`$ | Total multi-season gross margin. Ensures farm household cash-flow viability and debt service capacity. |
+| **2. Water Demand** | $`f_{k, \text{water}}`$ | mm | Minimize | $`\sum_{t=1}^T (K_{c, k, t} \times ET_{0, t}^{\text{NASA}})`$ | Cumulative crop evapotranspiration ($`ET_c`$). Lower values preserve groundwater and reduce diesel/electric pumping bills. |
+| **3. Soil Nitrogen Delta** | $`f_{k, \text{soil}}`$ | kg N/ha | Maximize | $`\sum_{t=1}^T \Delta N_{k, t}`$ | Net rotational nitrogen balance. Positive delta from legume fixation (+20 to +50 kg N/ha) offsets cereal soil depletion. |
+| **4. Volatility Risk** | $`f_{k, \text{risk}}`$ | Index (1–5) | Minimize | $`\frac{1}{T} \sum_{t=1}^T \text{RiskFactor}_{k, t}`$ | Composite vulnerability score capturing crop perishability, wholesale market price volatility, and drought sensitivity. |
 
 ---
 
