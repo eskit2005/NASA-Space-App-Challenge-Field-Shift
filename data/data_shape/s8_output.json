@@ -1,0 +1,137 @@
+{
+  "farmer": {
+    "farm_id": "farm-001",
+    "location": {
+      "latitude": 23.8103,
+      "longitude": 90.4125
+    },
+    "area_ha": 12.5,
+    "budget_usd": 8000,
+    "irrigation_quota_m3": 45000,
+    "priorities": {
+      "gross_margin": 0.5,
+      "water_m3": 0.3,
+      "soil_score": 0.2
+    },
+    "soil_overrides": {
+      "ph": 6.4
+    },
+    "attributes": {
+      "district": "dhaka",
+      "irrigation_method": "tube_well"
+    }
+  },
+  "environment": {
+    "soil": {
+      "ph": 6.4,
+      "organic_carbon_g_kg": 12.0,
+      "texture": "loam",
+      "is_field_tested": true,
+      "attributes": {
+        "clay_pct": 28.0,
+        "sand_pct": 34.0,
+        "silt_pct": 38.0,
+        "total_nitrogen_g_kg": 1.2
+      }
+    },
+    "seasons": [
+      {
+        "season": "season_1",
+        "mean_temp_c": 24.5,
+        "precipitation_mm": 120.0,
+        "et0_mm": 310.0,
+        "attributes": {}
+      },
+      {
+        "season": "season_2",
+        "mean_temp_c": 31.0,
+        "precipitation_mm": 480.0,
+        "et0_mm": 420.0,
+        "attributes": {}
+      },
+      {
+        "season": "season_3",
+        "mean_temp_c": 26.0,
+        "precipitation_mm": 95.0,
+        "et0_mm": 260.0,
+        "attributes": {}
+      }
+    ],
+    "warnings": [
+      "ph taken from farmer soil_overrides (field-tested), grid estimate ignored"
+    ],
+    "source": "S3 normalization from RawEnvironment, 2026-10-05"
+  },
+  "evaluated": {
+    "sequences": [
+      {
+        "sequence_id": "seq-001",
+        "crop_ids": ["wheat", "rice", "mung_bean"],
+        "metrics": {
+          "gross_margin": 5200.0,
+          "water_m3": 9500.0,
+          "soil_score": 0.74
+        },
+        "is_pareto_optimal": true,
+        "notes": {
+          "label": "high margin"
+        }
+      },
+      {
+        "sequence_id": "seq-002",
+        "crop_ids": ["mung_bean", "rice", "wheat"],
+        "metrics": {
+          "gross_margin": 4750.0,
+          "water_m3": 8200.0,
+          "soil_score": 0.71
+        },
+        "is_pareto_optimal": true,
+        "notes": {
+          "label": "low water"
+        }
+      },
+      {
+        "sequence_id": "seq-003",
+        "crop_ids": ["wheat", "rice", "wheat"],
+        "metrics": {
+          "gross_margin": 4900.0,
+          "water_m3": 9600.0,
+          "soil_score": 0.52
+        },
+        "is_pareto_optimal": false,
+        "notes": {
+          "label": "weak rotation (wheat after wheat), dominated by seq-001"
+        }
+      }
+    ],
+    "warnings": [],
+    "source": "S6 scoring + Pareto flagging, 2026-10-05"
+  },
+  "explanation": {
+    "summary": "For farm-001 over 3 seasons, sequence seq-001 (wheat -> rice -> mung bean) offers the best gross margin while staying within the irrigation quota; seq-002 trades margin for lower water use, and seq-003 is dominated due to wheat following wheat.",
+    "sections": {
+      "water": "Estimated water demand of 9500 m3 for seq-001 sits well inside the 45000 m3 seasonal quota; seq-002 uses 8200 m3 for farmers prioritising water savings.",
+      "soil": "Legume inclusion in seq-001 and seq-002 restores soil_score to 0.74/0.71 versus 0.52 for seq-003, where back-to-back cereals mine nitrogen.",
+      "rotation_risk": "seq-003 repeats wheat in season_1 and season_3, raising disease carry-over risk; no other candidate repeats a family in adjacent seasons."
+    },
+    "evidence": [
+      {
+        "source_id": "ev-001",
+        "title": "Fixture evaluation results (S6)",
+        "url": null,
+        "claim": "seq-001 scores gross_margin 5200.0, water_m3 9500.0, soil_score 0.74 and is Pareto-optimal."
+      },
+      {
+        "source_id": "ev-002",
+        "title": "Farmer profile priorities (S1)",
+        "url": null,
+        "claim": "The farmer weights gross_margin 0.5, water_m3 0.3, soil_score 0.2."
+      }
+    ],
+    "generated_by": "template",
+    "warnings": [],
+    "source": "S7 template explainer, 2026-10-05"
+  },
+  "warnings": [],
+  "source": "S8 audit, 2026-10-05"
+}

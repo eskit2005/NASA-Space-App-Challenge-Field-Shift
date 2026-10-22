@@ -1,0 +1,38 @@
+[project]
+name = "cropseq"
+version = "0.1.0"
+readme = "README.md"
+authors = [
+    { name = "Muwafiq Khan", email = "muwafiqkhanbzm2027@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.142.2",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "litellm>=1.104.0",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "tenacity>=9.1.4",
+    "typer>=0.27.2",
+    "uvicorn>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]
+"src/cropseq/contracts/*.py" = ["RUF012"]
+"src/cropseq/config.py" = ["RUF012"]

@@ -1,0 +1,102 @@
+{
+  "by_season": {
+    "season_1": [
+      {
+        "crop_id": "wheat",
+        "name": "Wheat",
+        "family": "Poaceae",
+        "attributes": {
+          "ph_min": 6.0,
+          "ph_max": 7.5,
+          "growth_days": 110.0,
+          "kc_mid": 1.1,
+          "yield_t_ha": 3.2,
+          "price_usd_per_t": 280.0,
+          "cost_usd_per_ha": 420.0,
+          "water_mm": 450.0,
+          "nitrogen_balance_kg_ha": 20.0,
+          "root_depth_class": "medium",
+          "suitable_seasons": [1, 3]
+        }
+      },
+      {
+        "crop_id": "mung_bean",
+        "name": "Mung Bean",
+        "family": "Fabaceae",
+        "attributes": {
+          "ph_min": 5.5,
+          "ph_max": 7.0,
+          "growth_days": 65.0,
+          "kc_mid": 0.95,
+          "yield_t_ha": 1.4,
+          "price_usd_per_t": 620.0,
+          "cost_usd_per_ha": 240.0,
+          "water_mm": 220.0,
+          "nitrogen_balance_kg_ha": 45.0,
+          "root_depth_class": "shallow",
+          "suitable_seasons": [1, 3]
+        }
+      }
+    ],
+    "season_2": [
+      {
+        "crop_id": "rice",
+        "name": "Rice",
+        "family": "Poaceae",
+        "attributes": {
+          "ph_min": 5.5,
+          "ph_max": 7.5,
+          "growth_days": 120.0,
+          "kc_mid": 1.2,
+          "yield_t_ha": 4.5,
+          "price_usd_per_t": 320.0,
+          "cost_usd_per_ha": 480.0,
+          "water_mm": 900.0,
+          "nitrogen_balance_kg_ha": 35.0,
+          "root_depth_class": "deep",
+          "suitable_seasons": [2]
+        }
+      }
+    ],
+    "season_3": [
+      {
+        "crop_id": "wheat",
+        "name": "Wheat",
+        "family": "Poaceae",
+        "attributes": {
+          "ph_min": 6.0,
+          "ph_max": 7.5,
+          "growth_days": 110.0,
+          "kc_mid": 1.1,
+          "yield_t_ha": 3.2,
+          "price_usd_per_t": 280.0,
+          "cost_usd_per_ha": 420.0,
+          "water_mm": 450.0,
+          "nitrogen_balance_kg_ha": 20.0,
+          "root_depth_class": "medium",
+          "suitable_seasons": [1, 3]
+        }
+      },
+      {
+        "crop_id": "mung_bean",
+        "name": "Mung Bean",
+        "family": "Fabaceae",
+        "attributes": {
+          "ph_min": 5.5,
+          "ph_max": 7.0,
+          "growth_days": 65.0,
+          "kc_mid": 0.95,
+          "yield_t_ha": 1.4,
+          "price_usd_per_t": 620.0,
+          "cost_usd_per_ha": 240.0,
+          "water_mm": 220.0,
+          "nitrogen_balance_kg_ha": 45.0,
+          "root_depth_class": "shallow",
+          "suitable_seasons": [1, 3]
+        }
+      }
+    ]
+  },
+  "warnings": [],
+  "source": "S4 filtering (crop catalog via 'web' adapter), 2026-10-05"
+}

@@ -1,0 +1,22 @@
+{
+  "farm_id": "farm-001",
+  "location": {
+    "latitude": 23.8103,
+    "longitude": 90.4125
+  },
+  "area_ha": 12.5,
+  "budget_usd": 8000,
+  "irrigation_quota_m3": 45000,
+  "priorities": {
+    "gross_margin": 0.5,
+    "water_m3": 0.3,
+    "soil_score": 0.2
+  },
+  "soil_overrides": {
+    "ph": 6.4
+  },
+  "attributes": {
+    "district": "dhaka",
+    "irrigation_method": "tube_well"
+  }
+}
