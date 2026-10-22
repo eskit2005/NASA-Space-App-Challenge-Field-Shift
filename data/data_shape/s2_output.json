@@ -1,0 +1,117 @@
+{
+  "soil_raw": {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [90.4, 23.8]
+    },
+    "properties": {
+      "layers": [
+        {
+          "name": "phh2o",
+          "unit_measure": {
+            "d_factor": 10,
+            "mapped_units": "pH*10",
+            "target_units": "pH"
+          },
+          "depths": [
+            {
+              "range": { "top_depth": 0, "bottom_depth": 5, "unit_depth": "cm" },
+              "label": "0-5cm",
+              "values": { "mean": 64 }
+            }
+          ]
+        },
+        {
+          "name": "clay",
+          "unit_measure": {
+            "d_factor": 10,
+            "mapped_units": "g/kg",
+            "target_units": "%"
+          },
+          "depths": [
+            {
+              "range": { "top_depth": 0, "bottom_depth": 5, "unit_depth": "cm" },
+              "label": "0-5cm",
+              "values": { "mean": 280 }
+            }
+          ]
+        },
+        {
+          "name": "sand",
+          "unit_measure": {
+            "d_factor": 10,
+            "mapped_units": "g/kg",
+            "target_units": "%"
+          },
+          "depths": [
+            {
+              "range": { "top_depth": 0, "bottom_depth": 5, "unit_depth": "cm" },
+              "label": "0-5cm",
+              "values": { "mean": 340 }
+            }
+          ]
+        },
+        {
+          "name": "silt",
+          "unit_measure": {
+            "d_factor": 10,
+            "mapped_units": "g/kg",
+            "target_units": "%"
+          },
+          "depths": [
+            {
+              "range": { "top_depth": 0, "bottom_depth": 5, "unit_depth": "cm" },
+              "label": "0-5cm",
+              "values": { "mean": 380 }
+            }
+          ]
+        },
+        {
+          "name": "soc",
+          "unit_measure": {
+            "d_factor": 10,
+            "mapped_units": "dg/kg",
+            "target_units": "g/kg"
+          },
+          "depths": [
+            {
+              "range": { "top_depth": 0, "bottom_depth": 5, "unit_depth": "cm" },
+              "label": "0-5cm",
+              "values": { "mean": 120 }
+            }
+          ]
+        },
+        {
+          "name": "nitrogen",
+          "unit_measure": {
+            "d_factor": 100,
+            "mapped_units": "cg/kg",
+            "target_units": "g/kg"
+          },
+          "depths": [
+            {
+              "range": { "top_depth": 0, "bottom_depth": 5, "unit_depth": "cm" },
+              "label": "0-5cm",
+              "values": { "mean": 120 }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "weather_raw": {
+    "timezone": "Asia/Dhaka",
+    "daily": {
+      "time": ["2026-01-01", "2026-01-02", "2026-01-03"],
+      "temperature_2m_mean": [22.1, 22.8, 21.9],
+      "precipitation_sum": [0.0, 4.2, 1.1],
+      "et0_fao_evapotranspiration": [2.9, 3.1, 2.7]
+    }
+  },
+  "fetched_at": "2026-10-05T09:00:00+00:00",
+  "warnings": [
+    "SoilGrids pH is on the x10 scale (64, not 6.4); conversion happens in S3"
+  ],
+  "source": "SoilGrids + Open-Meteo, 2026-10-05"
+}

@@ -1,0 +1,18 @@
+{
+  "sequences": [
+    {
+      "sequence_id": "seq-001",
+      "crop_ids": ["wheat", "rice", "mung_bean"]
+    },
+    {
+      "sequence_id": "seq-002",
+      "crop_ids": ["mung_bean", "rice", "wheat"]
+    },
+    {
+      "sequence_id": "seq-003",
+      "crop_ids": ["wheat", "rice", "wheat"]
+    }
+  ],
+  "warnings": [],
+  "source": "S5 sequence generation, 2026-10-05"
+}

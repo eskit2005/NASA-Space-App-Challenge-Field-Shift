@@ -1,0 +1,45 @@
+{
+  "sequences": [
+    {
+      "sequence_id": "seq-001",
+      "crop_ids": ["wheat", "rice", "mung_bean"],
+      "metrics": {
+        "gross_margin": 5200.0,
+        "water_m3": 9500.0,
+        "soil_score": 0.74
+      },
+      "is_pareto_optimal": true,
+      "notes": {
+        "label": "high margin"
+      }
+    },
+    {
+      "sequence_id": "seq-002",
+      "crop_ids": ["mung_bean", "rice", "wheat"],
+      "metrics": {
+        "gross_margin": 4750.0,
+        "water_m3": 8200.0,
+        "soil_score": 0.71
+      },
+      "is_pareto_optimal": true,
+      "notes": {
+        "label": "low water"
+      }
+    },
+    {
+      "sequence_id": "seq-003",
+      "crop_ids": ["wheat", "rice", "wheat"],
+      "metrics": {
+        "gross_margin": 4900.0,
+        "water_m3": 9600.0,
+        "soil_score": 0.52
+      },
+      "is_pareto_optimal": false,
+      "notes": {
+        "label": "weak rotation (wheat after wheat), dominated by seq-001"
+      }
+    }
+  ],
+  "warnings": [],
+  "source": "S6 scoring + Pareto flagging, 2026-10-05"
+}
