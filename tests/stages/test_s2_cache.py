@@ -1,6 +1,7 @@
 """Unit tests for S2 SQLite cache and key generation."""
 
 from pathlib import Path
+
 from cropseq.stages.s2_environment.cache.sqlite import SQLiteCache, make_cache_key
 
 

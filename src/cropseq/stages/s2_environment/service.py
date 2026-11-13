@@ -1,27 +1,43 @@
-"""S2 environment: fetch raw soil + weather payloads via Ports & Adapters."""
+"""S2 environment: fetch raw soil + weather data from real APIs.
+
+Order of work:
+1. `run(location)` is the public entry point for the stage.
+2. `build_environment_service()` picks the adapters from config and opens the cache.
+3. `_get_planning_date_range()` turns `config.seasons` into start/end dates.
+4. `EnvironmentService.fetch()` checks the cache, calls the adapters for anything
+   missing, saves new responses, and returns `RawEnvironment`.
+5. The pipeline passes that `RawEnvironment` to S3.
+
+This stage does not clean or convert the data. It only fetches raw payloads.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import calendar
 import concurrent.futures
-from datetime import date, datetime, timezone
-from typing import Any, Coroutine, TypeVar
+from collections.abc import Coroutine
+from datetime import UTC, date, datetime
+from pathlib import Path
+from typing import Any
 
 from cropseq.config import config
-from cropseq.contracts import Location, RawEnvironment
+from cropseq.contracts import FarmerProfile, Location, RawEnvironment
 
-from .adapters.fake import FakeSoilProvider, FakeWeatherProvider
 from .adapters.open_meteo import OpenMeteoAdapter
 from .adapters.soilgrids import SoilGridsAdapter
 from .cache.sqlite import SQLiteCache, make_cache_key
 from .ports import CachePort, SoilDataPort, WeatherDataPort
 
-T = TypeVar("T")
+DATA = Path(__file__).resolve().parents[4] / "data" / "data_shape"
+S1_OUTPUT = DATA / "s1_output.json"
 
 
-def _run_coroutine(coro: Coroutine[Any, Any, T]) -> T:
-    """Run an async coroutine synchronously, handling already-running event loops."""
+def _run_coroutine[T](coro: Coroutine[Any, Any, T]) -> T:
+    """Run an async coroutine from normal sync code.
+
+    Uses a helper thread if an event loop is already running (e.g. inside FastAPI).
+    """
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
@@ -34,7 +50,15 @@ def _run_coroutine(coro: Coroutine[Any, Any, T]) -> T:
 
 
 class EnvironmentService:
-    """Coordinates fetching and caching raw environmental data across external providers."""
+    """Coordinates the cache and the two adapters.
+
+    Steps inside `fetch()`:
+    1. Build a cache key for soil and one for weather.
+    2. Look both up in the cache.
+    3. Fetch only the missing ones, at the same time.
+    4. Save new responses to the cache.
+    5. Return both raw payloads inside `RawEnvironment`.
+    """
 
     def __init__(
         self,
@@ -42,14 +66,10 @@ class EnvironmentService:
         soil_provider: SoilDataPort,
         weather_provider: WeatherDataPort,
         cache: CachePort,
-        fallback_soil_provider: SoilDataPort | None = None,
-        fallback_weather_provider: WeatherDataPort | None = None,
     ) -> None:
         self.soil_provider = soil_provider
         self.weather_provider = weather_provider
         self.cache = cache
-        self.fallback_soil_provider = fallback_soil_provider
-        self.fallback_weather_provider = fallback_weather_provider
 
     async def fetch(
         self,
@@ -59,6 +79,7 @@ class EnvironmentService:
         start_date: date,
         end_date: date,
     ) -> RawEnvironment:
+        """Return raw soil and weather for one location and date range."""
         soil_request = {"latitude": latitude, "longitude": longitude}
         weather_request = {
             "latitude": latitude,
@@ -70,16 +91,18 @@ class EnvironmentService:
         soil_key = make_cache_key(self.soil_provider.name, soil_request)
         weather_key = make_cache_key(self.weather_provider.name, weather_request)
 
-        # 1. Cache lookup
+        # 1. Cache lookup: same provider + same request = same key.
         cached_soil = self.cache.get(soil_key)
         cached_weather = self.cache.get(weather_key)
 
-        # 2. Fetch missing in parallel
+        # 2. Fetch only what the cache does not have. Both calls run in parallel.
         tasks = []
         task_indices: dict[str, int] = {}
         if cached_soil is None:
             task_indices["soil"] = len(tasks)
-            tasks.append(self.soil_provider.fetch(latitude=latitude, longitude=longitude))
+            tasks.append(
+                self.soil_provider.fetch(latitude=latitude, longitude=longitude)
+            )
         if cached_weather is None:
             task_indices["weather"] = len(tasks)
             tasks.append(
@@ -97,84 +120,76 @@ class EnvironmentService:
 
         warnings: list[str] = []
 
-        # 3. Resolve soil
+        # 3. Resolve soil: use the cached value, or the fetched one.
+        #    A dead soil API must not kill the whole pipeline: continue with
+        #    empty soil and report it in `warnings`.
         if cached_soil is not None:
             soil = cached_soil
             soil_source = f"{self.soil_provider.name} (cache)"
         else:
             soil_res = results[task_indices["soil"]]
             if isinstance(soil_res, Exception):
-                if self.fallback_soil_provider is not None:
-                    soil = await self.fallback_soil_provider.fetch(
-                        latitude=latitude, longitude=longitude
-                    )
-                    soil_source = f"{self.fallback_soil_provider.name} (fallback)"
-                    warnings.append(
-                        f"Soil provider '{self.soil_provider.name}' failed: {soil_res}. Used fallback."
-                    )
-                else:
-                    raise soil_res
+                soil = {}
+                soil_source = "unavailable"
+                warnings.append(
+                    f"Soil fetch failed, continuing without soil: {soil_res}"
+                )
             else:
                 soil = soil_res
                 soil_source = f"{self.soil_provider.name} (api)"
                 self.cache.set(soil_key, self.soil_provider.name, soil_request, soil)
 
-        # 4. Resolve weather
+        # A partially failed adapter reports which property groups it lost.
+        if isinstance(soil, dict):
+            warnings.extend(soil.get("errors", []))
+
+        # 4. Resolve weather the same way.
         if cached_weather is not None:
             weather = cached_weather
             weather_source = f"{self.weather_provider.name} (cache)"
         else:
             weather_res = results[task_indices["weather"]]
             if isinstance(weather_res, Exception):
-                if self.fallback_weather_provider is not None:
-                    weather = await self.fallback_weather_provider.fetch(
-                        latitude=latitude,
-                        longitude=longitude,
-                        start_date=start_date,
-                        end_date=end_date,
-                    )
-                    weather_source = f"{self.fallback_weather_provider.name} (fallback)"
-                    warnings.append(
-                        f"Weather provider '{self.weather_provider.name}' failed: {weather_res}. Used fallback."
-                    )
-                else:
-                    raise weather_res
-            else:
-                weather = weather_res
-                weather_source = f"{self.weather_provider.name} (api)"
-                self.cache.set(weather_key, self.weather_provider.name, weather_request, weather)
+                raise weather_res
+            weather = weather_res
+            weather_source = f"{self.weather_provider.name} (api)"
+            self.cache.set(
+                weather_key, self.weather_provider.name, weather_request, weather
+            )
 
         return RawEnvironment(
             soil_raw=soil,
             weather_raw=weather,
-            fetched_at=datetime.now(timezone.utc).isoformat(),
+            fetched_at=datetime.now(UTC).isoformat(),
             warnings=warnings,
             source=f"soil:{soil_source}, weather:{weather_source}",
         )
 
 
 def _build_soil_provider(name: str) -> SoilDataPort:
-    if name == "fake":
-        return FakeSoilProvider()
+    """Return the soil adapter for a config name. Only 'soilgrids' exists."""
     if name == "soilgrids":
         return SoilGridsAdapter()
     raise NotImplementedError(
-        f"Soil adapter '{name}' is not supported. Supported: 'fake', 'soilgrids'."
+        f"Soil adapter '{name}' is not supported. Supported: 'soilgrids'."
     )
 
 
 def _build_weather_provider(name: str) -> WeatherDataPort:
-    if name == "fake":
-        return FakeWeatherProvider()
+    """Return the weather adapter for a config name. Only Open-Meteo exists."""
     if name in {"openmeteo", "open_meteo"}:
         return OpenMeteoAdapter()
     raise NotImplementedError(
-        f"Weather adapter '{name}' is not supported. Supported: 'fake', 'openmeteo'."
+        f"Weather adapter '{name}' is not supported. Supported: 'openmeteo'."
     )
 
 
 def _get_planning_date_range(reference_year: int = 2025) -> tuple[date, date]:
-    """Derive chronological date range across configured seasons, handling year-wrapping."""
+    """Turn `config.seasons` into one continuous date range.
+
+    Example: seasons Jan-Apr, May-Aug, Sep-Dec -> 2025-01-01 .. 2025-12-31.
+    A season that wraps the year (Nov-Feb) pushes the end date to the next year.
+    """
     if not config.seasons:
         return date(reference_year, 1, 1), date(reference_year, 12, 31)
 
@@ -202,9 +217,14 @@ def build_environment_service(
     weather_name: str | None = None,
     cache_path: str | None = None,
 ) -> EnvironmentService:
-    """Factory creating an EnvironmentService using current config and fallback defaults."""
-    soil_adapter_name = soil_name or config.adapters.get("soil", "fake")
-    weather_adapter_name = weather_name or config.adapters.get("weather", "fake")
+    """Build the service from config.
+
+    1. Read the soil adapter name (default 'soilgrids').
+    2. Read the weather adapter name (default 'openmeteo').
+    3. Create both adapters and the SQLite cache.
+    """
+    soil_adapter_name = soil_name or config.adapters.get("soil", "soilgrids")
+    weather_adapter_name = weather_name or config.adapters.get("weather", "openmeteo")
     db_path = cache_path or config.cache_db
 
     soil_provider = _build_soil_provider(soil_adapter_name)
@@ -215,13 +235,24 @@ def build_environment_service(
         soil_provider=soil_provider,
         weather_provider=weather_provider,
         cache=cache,
-        fallback_soil_provider=FakeSoilProvider(),
-        fallback_weather_provider=FakeWeatherProvider(),
     )
 
 
-def run(location: Location) -> RawEnvironment:
-    """Fetch raw soil + weather payloads for the farm location."""
+def run(location: Location | None = None) -> RawEnvironment:
+    """Fetch raw soil + weather payloads for the farm location.
+
+    Steps:
+    1. Use the given location. If none, load it from s1_output.json.
+    2. Build the service (adapters + cache).
+    3. Compute the date range from config.seasons.
+    4. Run the async fetch and return RawEnvironment.
+
+    Standalone: loads the location from s1_output.json.
+    """
+    if location is None:
+        location = FarmerProfile.model_validate_json(
+            S1_OUTPUT.read_text(encoding="utf-8")
+        ).location
     service = build_environment_service()
     start_date, end_date = _get_planning_date_range()
 

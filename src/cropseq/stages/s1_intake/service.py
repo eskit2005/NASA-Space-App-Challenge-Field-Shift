@@ -4,12 +4,16 @@ from pathlib import Path
 
 from cropseq.contracts import FarmerProfile
 
-FIXTURE = Path(__file__).resolve().parents[4] / "data" / "data_shape" / "s1_output.json"
+DATA = Path(__file__).resolve().parents[4] / "data" / "data_shape"
+INPUT = DATA / "s1_input.json"
+OUTPUT = DATA / "s1_output.json"
 
 
-def run(profile: FarmerProfile) -> FarmerProfile:
+def run(profile: FarmerProfile | None = None) -> FarmerProfile:
     """Validate the incoming profile and apply defaults.
 
-    Stub: returns the s1 fixture. TODO: merge `profile` with defaults instead.
+    Standalone: loads s1_input.json. Stub: returns s1_output.json.
     """
-    return FarmerProfile.model_validate_json(FIXTURE.read_text(encoding="utf-8"))
+    if profile is None:
+        profile = FarmerProfile.model_validate_json(INPUT.read_text(encoding="utf-8"))
+    return FarmerProfile.model_validate_json(OUTPUT.read_text(encoding="utf-8"))

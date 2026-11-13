@@ -1,5 +1,6 @@
-"""Unit tests for S2 EnvironmentService orchestration, caching, and fallback."""
+"""Unit tests for S2 EnvironmentService orchestration and caching."""
 
+import os
 from datetime import date
 from unittest.mock import AsyncMock
 
@@ -55,42 +56,9 @@ async def test_service_cache_hit_and_miss(tmp_path) -> None:
     assert mock_weather.fetch.call_count == 1
 
 
-@pytest.mark.anyio
-async def test_service_fallback_on_api_failure(tmp_path) -> None:
-    cache = SQLiteCache(tmp_path / "cache.sqlite")
-
-    failing_soil = AsyncMock()
-    failing_soil.name = "soilgrids"
-    failing_soil.fetch.side_effect = RuntimeError("ISRIC 503 Outage")
-
-    fallback_soil = AsyncMock()
-    fallback_soil.name = "fallback_soil"
-    fallback_soil.fetch.return_value = {"phh2o": 70, "fallback": True}
-
-    ok_weather = AsyncMock()
-    ok_weather.name = "open_meteo"
-    ok_weather.fetch.return_value = {"rain": [5.0]}
-
-    service = EnvironmentService(
-        soil_provider=failing_soil,
-        weather_provider=ok_weather,
-        cache=cache,
-        fallback_soil_provider=fallback_soil,
-    )
-
-    res = await service.fetch(
-        latitude=36.7,
-        longitude=-119.7,
-        start_date=date(2025, 1, 1),
-        end_date=date(2025, 1, 31),
-    )
-
-    assert res.soil_raw == {"phh2o": 70, "fallback": True}
-    assert "fallback" in res.source
-    assert len(res.warnings) == 1
-    assert "ISRIC 503 Outage" in res.warnings[0]
-
-
+@pytest.mark.skipif(
+    not os.getenv("CROPSEQ_LIVE"), reason="requires live SoilGrids/Open-Meteo"
+)
 def test_s2_run_entrypoint() -> None:
     loc = Location(latitude=23.8, longitude=90.4)
     raw = run(loc)
@@ -132,4 +100,3 @@ def test_get_planning_date_range_standard_and_wrapping(monkeypatch) -> None:
     start_wrap, end_wrap = _get_planning_date_range(reference_year=2025)
     assert start_wrap == date(2025, 11, 1)
     assert end_wrap == date(2026, 10, 31)
-

@@ -1,4 +1,12 @@
-"""Ports (Protocol interfaces) for S2. Adapters implement these."""
+"""Ports for S2: the interfaces this stage depends on.
+
+1. A port says WHAT data must come back, never HOW it is fetched.
+2. `SoilDataPort` returns the raw soil payload.
+3. `WeatherDataPort` returns the raw weather payload.
+4. `CachePort` stores and reads raw payloads by key.
+
+Adapters in `adapters/` implement these. `service.py` imports only the ports.
+"""
 
 from __future__ import annotations
 

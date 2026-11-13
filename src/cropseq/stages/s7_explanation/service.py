@@ -1,10 +1,15 @@
 """S7 explanation: evaluation -> explanation (adapter-driven)."""
 
+from pathlib import Path
+
 from cropseq.config import config
 from cropseq.contracts import EvaluatedSequences, Explanation
 
 from .adapters.fake import FakeExplainer
 from .ports import Explainer
+
+DATA = Path(__file__).resolve().parents[4] / "data" / "data_shape"
+S6_OUTPUT = DATA / "s6_output.json"
 
 
 def _explainer() -> Explainer:
@@ -18,6 +23,13 @@ def _explainer() -> Explainer:
     )
 
 
-def run(evaluated: EvaluatedSequences) -> Explanation:
-    """Produce the explanation via the configured explainer adapter."""
+def run(evaluated: EvaluatedSequences | None = None) -> Explanation:
+    """Produce the explanation via the configured explainer adapter.
+
+    Standalone: loads s6_output.json.
+    """
+    if evaluated is None:
+        evaluated = EvaluatedSequences.model_validate_json(
+            S6_OUTPUT.read_text(encoding="utf-8")
+        )
     return _explainer().explain(evaluated)

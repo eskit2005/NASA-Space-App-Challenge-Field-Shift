@@ -1,4 +1,11 @@
-"""Open-Meteo Historical Archive API adapter for S2."""
+"""Open-Meteo adapter for S2.
+
+1. Talks to the Open-Meteo Historical Archive API.
+2. Sends latitude, longitude, a date range and three daily variables:
+   mean temperature, precipitation and reference evapotranspiration.
+3. Returns the raw daily JSON response.
+4. Does no aggregation. That belongs to S3.
+"""
 
 from __future__ import annotations
 

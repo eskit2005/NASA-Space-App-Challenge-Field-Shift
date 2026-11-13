@@ -1,11 +1,16 @@
 """S4 filtering: environment -> feasible crops per season (adapter-driven)."""
 
+from pathlib import Path
+
 from cropseq.config import config
 from cropseq.contracts import Crop, Environment, FeasibleCrops
 
 from .adapters.fake import FakeCropCatalog
 from .fixture import load_fixture
 from .ports import CropCatalog
+
+DATA = Path(__file__).resolve().parents[4] / "data" / "data_shape"
+S3_OUTPUT = DATA / "s3_output.json"
 
 
 def _catalog() -> CropCatalog:
@@ -24,12 +29,17 @@ def _suitable_seasons(crop: Crop) -> list[int]:
     return value if isinstance(value, list) else []
 
 
-def run(environment: Environment) -> FeasibleCrops:
+def run(environment: Environment | None = None) -> FeasibleCrops:
     """Keep the crops that can grow in each configured season.
 
+    Standalone: loads s3_output.json.
     Stub: feasibility = the catalog's `suitable_seasons` attribute.
     TODO: apply real rules (pH range, climate) from `environment`.
     """
+    if environment is None:
+        environment = Environment.model_validate_json(
+            S3_OUTPUT.read_text(encoding="utf-8")
+        )
     crops = _catalog().get_crops()
     by_season = {
         season.name: [c for c in crops if index in _suitable_seasons(c)]

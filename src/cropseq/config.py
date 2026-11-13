@@ -27,14 +27,10 @@ class Config(BaseSettings):
     # --- What S6 scores. Add/remove names here (S6 must know how to compute each).
     objectives: list[str] = ["gross_margin", "water_m3", "soil_score"]
 
-    # --- Global environment provider preset (fake | real) ---
-    env_provider: str = Field(default="fake", alias="ENV_PROVIDER")
-
     # --- Which implementation each stage uses (the "adapters").
-    # All "fake" (offline, fixture-backed) by default.
     # Real names: soilgrids, openmeteo, web, template, llm.
-    adapter_soil: str = Field(default="fake", alias="ADAPTER_SOIL")
-    adapter_weather: str = Field(default="fake", alias="ADAPTER_WEATHER")
+    adapter_soil: str = Field(default="soilgrids", alias="ADAPTER_SOIL")
+    adapter_weather: str = Field(default="openmeteo", alias="ADAPTER_WEATHER")
     adapter_crops: str = Field(default="fake", alias="ADAPTER_CROPS")
     adapter_explainer: str = Field(default="fake", alias="ADAPTER_EXPLAINER")
 
@@ -48,16 +44,10 @@ class Config(BaseSettings):
     cache_db: str = Field(default="data/cache.sqlite", alias="CACHE_DB")
 
     @model_validator(mode="after")
-    def _sync_adapters(self) -> "Config":
-        default_soil = "soilgrids" if self.env_provider == "real" else "fake"
-        default_weather = "openmeteo" if self.env_provider == "real" else "fake"
-
-        active_soil = self.adapter_soil if self.adapter_soil != "fake" else default_soil
-        active_weather = self.adapter_weather if self.adapter_weather != "fake" else default_weather
-
+    def _sync_adapters(self) -> Config:
         defaults = {
-            "soil": active_soil,
-            "weather": active_weather,
+            "soil": self.adapter_soil,
+            "weather": self.adapter_weather,
             "crops": self.adapter_crops,
             "explainer": self.adapter_explainer,
         }
