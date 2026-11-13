@@ -101,17 +101,40 @@
     }
   },
   "weather_raw": {
-    "timezone": "Asia/Dhaka",
-    "daily": {
-      "time": ["2026-01-01", "2026-01-02", "2026-01-03"],
-      "temperature_2m_mean": [22.1, 22.8, 21.9],
-      "precipitation_sum": [0.0, 4.2, 1.1],
-      "et0_fao_evapotranspiration": [2.9, 3.1, 2.7]
+    "open_meteo": {
+      "timezone": "Asia/Dhaka",
+      "daily": {
+        "time": ["2026-01-01", "2026-01-02", "2026-01-03"],
+        "temperature_2m_mean": [22.1, 22.8, 21.9],
+        "precipitation_sum": [0.0, 4.2, 1.1],
+        "et0_fao_evapotranspiration": [2.9, 3.1, 2.7]
+      }
+    },
+    "nasa_power": {
+      "header": {
+        "title": "NASA/POWER Source Native Resolution Daily Data",
+        "fill_value": -999.0
+      },
+      "parameters": {
+        "T2M_MAX": {
+          "units": "C",
+          "longname": "Temperature at 2 Meters Maximum"
+        }
+      },
+      "properties": {
+        "parameter": {
+          "T2M_MAX": {
+            "20260101": 27.4,
+            "20260102": 28.1,
+            "20260103": 26.9
+          }
+        }
+      }
     }
   },
   "fetched_at": "2026-10-05T09:00:00+00:00",
   "warnings": [
     "SoilGrids pH is on the x10 scale (64, not 6.4); conversion happens in S3"
   ],
-  "source": "SoilGrids + Open-Meteo, 2026-10-05"
+  "source": "SoilGrids + Open-Meteo + NASA POWER, 2026-10-05"
 }

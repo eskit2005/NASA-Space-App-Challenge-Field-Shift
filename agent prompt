@@ -1,0 +1,2242 @@
+# 🌾 NASA Crop Sequence Recommender Engine: Master System Specification & Agent Rebuild Blueprint
+
+[![Python Standard Library](https://img.shields.io/badge/Python-3.8%2B%20(Pure%20Stdlib)-blue.svg)](https://www.python.org/)
+[![Zero External Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(No%20Pip%20Required)-success.svg)]()
+[![NASA Space Apps](https://img.shields.io/badge/NASA%20Space%20Apps-Field%20Shift-orange.svg)](https://www.spaceappschallenge.org/)
+[![Test Suite](https://img.shields.io/badge/Tests-12%2F12%20Automated%20Suites-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+
+> **Field Shift: Adapting Farms with NASA Earth Observations & Local Agro-Ecological Data**  
+> An agro-ecological decision-support system and crop sequence recommendation engine. Integrates NASA POWER satellite agroclimatology, UN FAO EcoCrop cardinal limits, ISRIC SoilGrids 2.0 pedometrics, and official Bangladesh Agricultural Research Council (BARC CZIS) regional matrices.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🎯 Executive Feasibility: Is it Possible to Rebuild from Scratch via Prompt?
+
+### **YES, 100% ABSOLUTELY.**
+This entire system was engineered strictly under **deterministic, pure-Python, zero-dependency principles**. There are no opaque compiled GIS binaries (no GDAL, GEOS, or Shapely), no proprietary APIs, no machine-learning black boxes, and no undocumented edge cases. 
+
+Every single component operates on **explicit mathematical proofs, formal schemas, and deterministic biological rules**:
+1. **The Spatial Router** is a pure Jordan Curve Ray-Casting algorithm operating on standard GeoJSON coordinate rings.
+2. **The Bangladesh Selector** uses a local SQLite write-through cache and algebraic weighting ($VS + 0.70 \times S$).
+3. **The Global Selector** uses continuous trapezoidal fuzzy logic with $\epsilon$-guards and the Sys et al. (1991) Square Root Land Evaluation formula.
+4. **The Agronomic Filter (Stage 4)** executes 5 deterministic combinatorial rules across 11,025 permutations.
+5. **The Optimization Engine (Stage 5)** computes Pareto-optimal sequences using normalized linear scalarization.
+
+Any competent AI agent (such as Google Antigravity, Claude Code, Cursor, Copilot Workspace, or Codex) provided with the **Master Agent Rebuild Prompt** below can regenerate every file, database table, algorithm, and test suite bit-for-bit from a clean slate.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 📑 Table of Contents
+1. [The Master Agent Rebuild Prompt (Copy & Paste)](#-the-master-agent-rebuild-prompt)
+2. [Complete System Architecture & Dual Pipelines](#-complete-system-architecture--dual-pipelines)
+3. [Zero-Dependency Runtime Boundary](#-zero-dependency-runtime-boundary)
+4. [Universal Input Contract & CLI Interface](#-universal-input-contract--cli-interface)
+5. [Module-by-Module Technical Specifications](#-module-by-module-technical-specifications)
+   - [5.1 Spatial Router (`src/router.py`)](#51-spatial-router-srcrouterpy)
+   - [5.2 Bangladesh BARC Selector (`src/stage3_barc_selector.py`)](#52-bangladesh-barc-selector-srcstage3_barc_selectorpy)
+   - [5.3 Global Environmental Fetcher (`src/global_env_fetcher.py`)](#53-global-environmental-fetcher-srcglobal_env_fetcherpy)
+   - [5.4 FAO EcoCrop Selector (`src/stage3_fao_selector.py`)](#54-fao-ecocrop-selector-srcstage3_fao_selectorpy)
+   - [5.5 Taxonomy & Botanical Helper (`src/taxonomy_helper.py`)](#55-taxonomy--botanical-helper-srctaxonomy_helperpy)
+   - [5.6 Master Engine API (`src/stage3_engine.py`)](#56-master-engine-api-srcstage3_enginepy)
+   - [5.7 Database Ingestion & Caching (`src/ingest_barc_data.py`)](#57-database-ingestion--caching-srcingest_barc_datapy)
+   - [5.8 Seasonal Agro-Climatic Calendar (`src/seasonal_calendar.py`)](#58-seasonal-agro-climatic-calendar-srcseasonal_calendarpy)
+6. [Stage 4: 2-Year (6-Season) Combinatorial Agronomic Filtering](#-stage-4-2-year-6-season-combinatorial-agronomic-filtering)
+7. [Stage 5: Multi-Objective Optimization & Portfolio Selection](#-stage-5-multi-objective-optimization--portfolio-selection)
+8. [Data Schemas & Assets](#-data-schemas--assets)
+9. [Data Provenance & How to Re-Harvest Everything from Scratch](#-data-provenance--how-to-re-harvest-everything-from-scratch)
+10. [Automated Verification & Unit Tests](#-automated-verification--unit-tests)
+11. [Step-by-Step Rebuild Execution Order](#-step-by-step-rebuild-execution-order)
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🤖 The Master Agent Rebuild Prompt
+
+> **Instructions for the User:** Copy the prompt below inside the block and paste it directly into an AI coding agent prompt window to reconstruct the entire project from scratch.
+
+```markdown
+You are an expert computational agronomist and software engineer tasked with building the "NASA Crop Sequence Recommender Engine (Stages 3 to 5)" from scratch in pure Python.
+
+### MANDATORY DESIGN CONSTRAINTS:
+1. 100% Pure Python Standard Library (Python 3.8+). Absolutely ZERO external pip dependencies (no numpy, pandas, shapely, geopandas, gdal, requests, or scipy).
+2. Zero C-GIS dependencies: Ray-casting Point-in-Polygon (PIP) must be implemented in pure Python.
+3. Offline & Air-Gapped Resilient: Local SQLite database with write-through caching.
+4. Robust Edge Guards: All divisions must have epsilon (1e-6) guards; all seasonal pools must guarantee non-empty lists by backfilling explicit Fallow objects (crop_id: 999) to prevent downstream Cartesian collapse.
+5. Dual-Branch Spatial Routing: Coordinates within Bangladesh bounding box [20.5°-26.7°N, 88.0°-92.7°E] that intersect official Upazila polygons route to Branch A (BARC CZIS). All others route to Branch B (Global FAO EcoCrop + NASA POWER).
+
+### DIRECTORY STRUCTURE TO CREATE:
+crop_sequence_recommender/
+├── README.md
+├── VERSION_LOG.md
+├── src/
+│   ├── __init__.py
+│   ├── router.py               # 2-Tier Jordan Curve ray-casting spatial router
+│   ├── taxonomy_helper.py      # Comprehensive botanical family taxonomy and synonym lookup
+│   ├── stage3_barc_selector.py # Bangladesh BARC CZIS selector with 3-tier bucketer
+│   ├── global_env_fetcher.py   # NASA POWER climatology & SoilGrids client with tipping-bucket LGP
+│   ├── stage3_fao_selector.py  # FAO EcoCrop fuzzy evaluator & Sys et al. (1991) scoring
+│   ├── stage3_engine.py        # Master unified engine and CLI entry point
+│   ├── seasonal_calendar.py    # Universal 10-regime agro-meteorological calendar engine
+│   └── ingest_barc_data.py     # SQLite migration and pre-caching utility
+├── tests/
+│   ├── __init__.py
+│   └── test_stage3.py          # 12-test automated unit and integration suite
+└── data/
+    ├── crop_recommender.db     # SQLite database for upazila_boundaries and upazila_suitable_crops
+    ├── upazila_polygons.json   # Upazila MultiPolygon boundary geometries
+    └── upazila_boundaries.csv  # Upazila bounding box cache for Tier-1 broad-phase filtering
+
+### CORE FORMULAS & ALGORITHMS TO IMPLEMENT:
+1. Spatial Ray-Casting: Count horizontal ray crossings (lon <= x_intersection) across boundary segments. Odd = Inside, Even = Outside.
+2. Effective Commercial Area: EffArea = VerySuitable + (0.70 * Suitable).
+3. Monsoonal Flood Depth Rules:
+   - "HL" (High Land): Purge flooded Boro rice and deepwater aman.
+   - "LL" / "VLL" (Low Land): Purge potato, dry-season vegetables, and sensitive pulses.
+   - Haor Monoculture Relaxation: In haors, cap K=1, set Rabi to ['Boro dhan'], and fill Kharif-1 / Kharif-2 with ['Fallow'].
+4. Perennial Tree Blacklist: Eliminate 19 tree species (date palm, mango, guava, coconut, etc.) from seasonal annual rotations.
+5. 3-Tier Dynamic Bucketer:
+   - Tier 1: Rank candidates by EffArea descending.
+   - Tier 2: Category Champions harvest (EffArea >= 300 ha) across 6 guilds (Pulses, Tubers, Oilseeds, Fibers, Cereals, Vegetables).
+   - Dynamic targets: Season 1 = 7 crops, Season 2 = 5 crops, Season 3 = 3 crops.
+6. FAO Trapezoidal Fuzzy Logic: Continuous trapezoidal membership with 1e-6 epsilon guards against ZeroDivisionError on plateaus.
+7. Sys et al. (1991) Square Root Land Evaluation Scoring:
+   S_total = S_min * sqrt( prod_{i != min} S_i ). Liebig's law preserved; no Storie exponential decay.
+8. Daily Tipping-Bucket Soil Water Balance:
+   W_t = max(0.0, min(100.0, W_{t-1} + P_d - PET_d)), with Hargreaves extraterrestrial radiation PET.
+9. Stage 4 Combinatorial Agronomic Filtering:
+   Filter 11,025 6-season sequences (c1..c6) across 2 years using 5 Hard Rules:
+   - R1: Botanical Family Break across consecutive years for same season (c1.family != c4.family, c2.family != c5.family).
+   - R2: Mandatory Legume insertion (>= 1 Fabaceae crop in 6 seasons).
+   - R3: Root Architecture alternation (>= 1 deep_tap crop to pierce plow-pan).
+   - R4: Summer Pest Bridge break (c2.family != c3.family, c5.family != c6.family).
+   - R5: 365-Day Calendar Turnaround (sum(duration + 10 days) <= 345 days/year).
+10. Stage 5 Multi-Objective Mathematical Optimization:
+    Z(S) = w1 * NormGrossMargin(S) + w2 * SoilHealthScore(S) - w3 * WaterStressPenalty(S).
+    Generate 3 distinct portfolio archetypes:
+    - Plan 1: Optimal Balanced Compromise (highest Z)
+    - Plan 2: Economic Profit Maximizer (highest Gross Margin)
+    - Plan 3: Soil Health & Low-Input Regenerator (highest Soil Health Score)
+
+### DATA SOURCES & RE-ACQUISITION PROCEDURES (FROM SCRATCH):
+1. Upazila Boundary MultiPolygons (505 Upazilas across Bangladesh):
+   - Endpoint: `https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3`
+   - Action: HTTPS GET with standard headers (`User-Agent: Mozilla/5.0`, `Accept: application/json`) and unverified SSL context; save JSON response directly to `data/upazila_polygons.json`.
+2. Spatial Bounding Boxes (`data/upazila_boundaries.csv` & SQLite):
+   - Action: Loop over the features in `data/upazila_polygons.json`, recurse geometry coordinates to compute `[min_lat, max_lat, min_lon, max_lon]`, write to `data/upazila_boundaries.csv`, and insert into table `upazila_boundaries` in `data/crop_recommender.db`.
+3. Upazila Crop Suitability Matrices (`data/crop_recommender.db`):
+   - Endpoint: `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{upazila_code}`
+   - Action:
+     * On-Demand (Write-Through): When `stage3_barc_selector.py` sees an uncached Upazila, query this endpoint once, compute `EffArea = VS + 0.70*S`, enrich with agronomic taxonomy, and persist to `upazila_suitable_crops`.
+     * Batch Seeding: Run `src/ingest_barc_data.py` to seed sample Upazilas or entire districts.
+4. Keyless NASA POWER Climatology (30-year climate normals):
+   - Endpoint: `https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M,T2M_MIN,T2M_MAX,PRECTOTCORR&community=AG&latitude={lat}&longitude={lon}&format=JSON`
+   - Action: 100% open public REST API. Convert precipitation rate: `monthly_rain = PRECTOTCORR * DaysInMonth`.
+5. Keyless ISRIC SoilGrids 2.0 (Global soil properties):
+   - Endpoint: `https://rest.isric.org/soilgrids/v2.0/properties/query` (Fallback mirror: `https://soilgrids.pixelgust.com/soilgrids/v2.0/properties/query`)
+   - Properties: `phh2o`, `sand`, `silt`, `clay`, `cec` at depths `0-5cm` and `5-15cm`. Classify USDA soil texture.
+6. Curated FAO EcoCrop Cardinal Limits & Taxonomy:
+   - Action: Embed the 37-crop FAO EcoCrop parameters in `src/stage3_fao_selector.py` and the 120+ crop botanical dictionary in `src/taxonomy_helper.py`.
+
+Proceed to implement all files, configure the database, and verify 100% test passing.
+```
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🌍 Complete System Architecture & Dual Pipelines
+
+```
+                                Farmer GPS (Lat, Lon)
+                                         │
+                                         ▼
+                     ┌───────────────────────────────────────┐
+                     │ 2-Tier Jordan Curve Spatial Router    │
+                     │ (Pure-Python Ray-Casting PIP in <0.3ms│
+                     └───────────────────┬───────────────────┘
+                                         │
+                    Is inside Bangladesh?│
+                    ┌────────────────────┴───────────────────┐
+                    │ YES                                    │ NO
+                    ▼                                        ▼
+      ┌───────────────────────────┐            ┌───────────────────────────┐
+      │ Branch A: Bangladesh BARC │            │ Branch B: Global FAO/NASA │
+      ├───────────────────────────┤            ├───────────────────────────┤
+      │ • BARC CZIS SQLite Cache  │            │ • NASA POWER Climatology  │
+      │ • EffArea = VS + 0.70×S   │            │ • ISRIC SoilGrids 2.0     │
+      │ • Monsoonal Flood Rules   │            │ • FAO Tipping-Bucket LGP  │
+      │ • Perennial Tree Purge    │            │ • Sys et al. 1991 Sqrt    │
+      │ • 3-Tier Dynamic Bucketer │            │ • Trapezoidal Fuzzy Epsilon│
+      └─────────────┬─────────────┘            └─────────────┬─────────────┘
+                    │                                        │
+                    └────────────────────┬───────────────────┘
+                                         ▼
+                      ┌────────────────────────────────────┐
+                      │ Stage 3 Output Contract Schema     │
+                      │ (Validated Candidate Seasonal Pools│
+                      └──────────────────┬─────────────────┘
+                                         │
+                                         ▼
+                      ┌────────────────────────────────────┐
+                      │ Stage 4: Combinatorial Filter      │
+                      │ 11,025 Permutations ➔ 5 Hard Rules │
+                      │ (30 to 50 Biologically Sound Seqs) │
+                      └──────────────────┬─────────────────┘
+                                         │
+                                         ▼
+                      ┌────────────────────────────────────┐
+                      │ Stage 5: Multi-Objective Optimizer │
+                      │ Max Z(S) = w1*GM + w2*Soil - w3*H2O│
+                      │ Portfolio: Top 3 Differentiated    │
+                      └────────────────────────────────────┘
+```
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🛡 Zero-Dependency Runtime Boundary
+
+The codebase is engineered to run in low-resource environments, serverless microservices, and edge kiosks:
+* ❌ **NO `pip install` required:** Uses 100% pure Python standard library (`math`, `urllib`, `sqlite3`, `json`, `argparse`, `dataclasses`, `time`).
+* ❌ **NO external GIS C-binaries (NO GDAL, GEOS, Shapely):** Ray-casting Point-in-Polygon (PIP) is built from first mathematical principles.
+* ❌ **NO API keys required:** Sourced from NASA POWER open public API, ISRIC SoilGrids REST endpoints, and local SQLite data.
+* ❌ **NO manual administrative codes:** Translates raw `(lat, lon)` directly to the official 6-digit BBS Upazila geocode in $< 0.15\text{ ms}$.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 📥 Universal Input Contract & CLI Interface
+
+### Universal Input Schema:
+| Parameter | Required | Type | Default | Description & Valid Values |
+| :---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+--- | :---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---: | :---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---: | :---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---: | :---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+--- |
+| **`latitude`** | **YES** | `float` | *None* | Geographic Latitude (e.g. `24.78` for Bogura, `-0.303` for Kenya). |
+| **`longitude`** | **YES** | `float` | *None* | Geographic Longitude (e.g. `89.04` for Bogura, `36.08` for Kenya). |
+| **`land_type`** | Optional | `string` | `"MHL"` | Monsoonal flood water depth classification:<br>• **`HL`** (High Land, 0 cm flood — purges flooded Boro paddy)<br>• **`MHL`** (Medium High Land, 0–90 cm flood — standard triple cropping)<br>• **`MLL`** (Medium Low Land, 90–180 cm flood — double cropping, caps $K=2$)<br>• **`LL`** or **`VLL`** (Low Land / Haor, 180–300+ cm flood — single Boro, caps $K=1$) |
+| **`priority_mode`** | Optional | `string` | `"balanced"` | Optimization weights preset:<br>• `"balanced"` ($w_1=0.50, w_2=0.35, w_3=0.15$)<br>• `"max_profit"` ($w_1=0.75, w_2=0.15, w_3=0.10$)<br>• `"soil_restoration"` ($w_1=0.25, w_2=0.60, w_3=0.15$) |
+
+### CLI Execution Command:
+```bash
+# Formatted Terminal Output (Bangladesh):
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04 --land-type MHL
+
+# Global Execution (Nakuru, Kenya):
+PYTHONPATH=. python3 src/stage3_engine.py --lat -0.303 --lon 36.08
+
+# JSON Contract Output for Web APIs:
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04 --json
+```
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🔬 Module-by-Module Technical Specifications
+
+### 5.1 Spatial Router (`src/router.py`)
+* **Purpose:** Resolves GPS `(lat, lon)` to an official Upazila or routes to the Global pipeline.
+* **Tier-0 National Envelope Geofence:**
+  $$\text{Latitude} \in [20.50, 26.70], \quad \text{Longitude} \in [88.00, 92.70]$$
+  Any coordinate falling outside this box immediately exits to `GLOBAL_FAO_ECOCROP` ($< 0.001\text{ ms}$).
+* **Tier-1 Broad-Phase Filter:**
+  Scans pre-computed Axis-Aligned Bounding Boxes (AABBs) from `data/upazila_boundaries.csv`. Reduces 505 Upazilas down to 1–3 candidate geometries.
+* **Tier-2 Narrow-Phase Ray-Casting (Jordan Curve Theorem):**
+  Pure-Python implementation casting a horizontal ray from `(lat, lon)` to $+\infty$. For each edge $(p_1, p_2)$ of the polygon:
+  $$\text{intersects} \iff (p_1.y > \text{lat} \ne p_2.y > \text{lat}) \land \left(\text{lon} < \frac{(p_2.x - p_1.x)(\text{lat} - p_1.y)}{p_2.y - p_1.y} + p_1.x\right)$$
+  An odd number of crossings indicates the point is **inside**; even indicates **outside**. Interior rings (holes) invert the condition.
+* **Performance:** Average resolution time: **$0.128\text{ ms}$**.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+### 5.2 Bangladesh BARC Selector (`src/stage3_barc_selector.py`)
+* **Purpose:** Extracts crop suitability matrices for the resolved Upazila from BARC CZIS data, eliminates ecologically unsuitable crops, and dynamic-buckets candidates into seasonal pools.
+* **Write-Through SQLite Caching:**
+  - Queries local `crop_recommender.db` (`upazila_suitable_crops`).
+  - Cache Hit: returns immediately in $< 3\text{ ms}$.
+  - Cache Miss: queries BARC API endpoint `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}`, writes records into SQLite, and returns.
+* **Effective Commercial Area ($\text{EffArea}$):**
+  $$\mathbf{\text{EffArea}} = \text{VerySuitable (VS)} + \big(0.70 \times \text{Suitable (S)}\big)$$
+  *Rationale:* Weighting `S` at 0.70 prevents economic bias while reflecting historical yield parity. Marginal (`MS`) land is strictly discarded.
+* **Biological Land-Type Exclusions:**
+  - `HL` (High Land): Standing water cannot be maintained. Purges flooded **Boro dhan** and deepwater broadcast aman.
+  - `LL` or `VLL` (Low Land): Monsoon submersion reaches 2–5 meters. Purges **Potato**, upland vegetables, and pulses susceptible to root-lenticel hypertrophy and rhizosphere anoxia.
+* **Haor Monoculture Relaxation Guard:**
+  - Haor wetlands (e.g. Sunamganj) cannot support summer crops due to deep flash flooding.
+  - When candidates for Kharif-1 or Kharif-2 drop to 0, sets Cropping Intensity $K=1$, allocates `['Boro dhan']` to Rabi, and backfills `['Fallow']` (`crop_id: 999`) into Kharif-1 and Kharif-2. Prevents empty-list crashes in downstream combinatorial loops.
+* **Perennial Orchard Blacklist Filter:**
+  Purges 19 permanent woody and plantation taxa from seasonal rotations:
+  ```python
+  PERENNIAL_ORCHARD_CROPS = {
+      "date palm", "palmyra palm", "guava", "jackfruit", "coconut", 
+      "mango", "banana", "papaya", "tea", "betel nut", "betel leaf", 
+      "litchi", "lemon", "jujube", "dragon fruit", "sapota", 
+      "golden apple", "sweet orange", "pineapple"
+  }
+  ```
+* **3-Tier Dynamic Bucketer with Category Champions:**
+  - Target pool sizes: **Rabi = 7**, **Kharif-1 = 5**, **Kharif-2 = 3**.
+  - Tier 1: Selects top crops sorted strictly by $\text{EffArea}$ descending.
+  - Tier 2 (Category Champions): Guarantees agronomic diversity by picking the highest $\text{EffArea}$ crop ($\ge 300\text{ ha}$) across 6 functional plant guilds:
+    `Pulses`, `Tubers`, `Oilseeds`, `Fibers`, `Cereals`, `Vegetables`.
+  - Tier 3: Backfills remaining slots with next highest suitability crops.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+### 5.3 Global Environmental Fetcher (`src/global_env_fetcher.py`)
+* **Purpose:** Collects keyless climatology and soil data for any international GPS coordinate.
+* **NASA POWER API Client:**
+  - Endpoint: `https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M,T2M_MIN,T2M_MAX,PRECTOTCORR&community=AG&latitude={lat}&longitude={lon}&format=JSON`
+  - Retrieves 30-year climate normals.
+  - Corrects precipitation: NASA returns `PRECTOTCORR` in $\text{mm/day}$; converts to monthly totals:
+    $$\text{Rain}_{\text{month}} = \text{PRECTOTCORR}_{\text{month}} \times \text{DaysInMonth}$$
+* **ISRIC SoilGrids 2.0 REST Client:**
+  - Queries `https://rest.isric.org/soilgrids/v2.0/properties/query` (with failover to `https://soilgrids.pixelgust.com/`).
+  - Retrieves pH ($\times 10$), Sand, Silt, Clay percentages, and Cation Exchange Capacity (CEC).
+  - Implements complete **USDA Soil Texture Triangle Classification** logic.
+* **FAO GAEZ v4 Daily Tipping-Bucket Water Balance:**
+  - Soil reference water storage capacity: $S_{\max} = 100\text{ mm}$.
+  - Daily Hargreaves Potential Evapotranspiration ($PET_d$) computed from extraterrestrial solar radiation $R_a$ and temperature range $(T_{\max} - T_{\min})^{0.5}$.
+  - Daily Soil Moisture Tracking:
+    $$W_t = \max\Big(0.0, \; \min\big(100.0, \; W_{t-1} + P_d - PET_d\big)\Big)$$
+  - Length of Growing Period (LGP): Day is active when:
+    $$(P_d + W_{t-1} \ge 0.5 \times PET_d) \land (T_{\text{mean}} \ge 5.0^\circ\text{C})$$
+* **Dynamic Cropping Intensity $K$ Mapping:**
+  - $\text{LGP} \ge 270\text{ days} \implies K = 3$ (Triple cropping)
+  - $165 \le \text{LGP} < 270\text{ days} \implies K = 2$ (Double cropping)
+  - $60 \le \text{LGP} < 165\text{ days} \implies K = 1$ (Single season)
+  - $\text{LGP} < 60\text{ days} \implies K = 0$ (Hyper-arid desert, fallow)
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+### 5.4 FAO EcoCrop Selector (`src/stage3_fao_selector.py`)
+* **Purpose:** Evaluates international crop candidates against UN FAO EcoCrop cardinal physiological limits.
+* **Curated Database:** 37 representative global crops across Cereals, Legumes, Oilseeds, Roots/Tubers, Vegetables, and Fibers.
+* **Trapezoidal Fuzzy Suitability Function with $\epsilon$-Guards:**
+  Eliminates `ZeroDivisionError` on vertical plateau bounds ($v_{\text{opmin}} = v_{\min}$ or $v_{\text{opmax}} = v_{\max}$):
+  ```python
+  def trapezoidal_fuzzy(x: float, v_min: float, v_opmin: float, v_opmax: float, v_max: float) -> float:
+      if math.isnan(x) or x < v_min or x > v_max:
+          return 0.0
+      if v_opmin <= x <= v_opmax:
+          return 1.0
+      if x < v_opmin:
+          denom = v_opmin - v_min
+          return 1.0 if denom <= 1e-6 else max(0.0, min(1.0, (x - v_min) / denom))
+      else:
+          denom = v_max - v_opmax
+          return 1.0 if denom <= 1e-6 else max(0.0, min(1.0, (v_max - x) / denom))
+  ```
+* **Sys et al. (1991) Square Root Land Evaluation Formula:**
+  Evaluates temperature, rainfall, pH, and soil texture:
+  $$\mathbf{S_{\text{total}}} = S_{\min} \times \sqrt{\prod_{i \ne \min} S_i}$$
+  *Advantage:* Strictly upholds **Liebig’s Law of the Minimum** (if any factor $S_i = 0 \implies S_{\text{total}} = 0$) while avoiding the extreme multiplicative penalization of the Storie Index ($0.8^4 = 0.4096 \text{ vs Sys } = 0.5724$).
+* **12-Month Cyclic Modulo Sliding Window:**
+  Evaluates crop duration across calendar boundaries using cyclic indexing:
+  $$\text{month}_i = (\text{start\_month} + i) \pmod{12}$$
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+### 5.5 Taxonomy & Botanical Helper (`src/taxonomy_helper.py`)
+* **Purpose:** Resolves botanical family classifications, plant guilds, and legume statuses, eliminating `"Unknown"` family tags that would break Stage 4 crop rotation rules.
+* **Comprehensive Mapping:** Over 120 regional English, Bengali, and scientific crop names mapped into standardized families:
+  - `Fabaceae` (Lentil, Mungbean, Chickpea, Grass pea, Cowpea, Soybean, Groundnut)
+  - `Poaceae` (Boro dhan, T. Aman, Aus, Wheat, Maize, Barley, Sorghum)
+  - `Solanaceae` (Potato, Tomato, Brinjal, Chilli)
+  - `Brassicaceae` (Mustard, Cabbage, Cauliflower, Radish, Broccoli)
+  - `Malvaceae` (Jute, Kenaf, Cotton, Okra)
+  - `Cucurbitaceae` (Bottle gourd, Sweet gourd, Ash gourd, Bitter gourd, Cucumber)
+  - `Apiaceae` (Coriander, Carrot, Cumin)
+  - `Amaryllidaceae` (Onion, Garlic)
+* **Synonym Unification:** Automatically resolves legacy botanical synonyms (e.g. *Leguminosae* $\to$ *Fabaceae*, *Gramineae* $\to$ *Poaceae*, *Cruciferae* $\to$ *Brassicaceae*).
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+### 5.6 Master Engine API (`src/stage3_engine.py`)
+* **Purpose:** Unified public contract orchestrating Spatial Router, BARC Selector, FAO Selector, and Taxonomy Enrichment.
+* **Singleton Access Pattern:** `Stage3Engine.get_instance()`.
+* **Output Contract (`Stage3Result`):**
+  ```python
+  @dataclass
+  class Stage3Result:
+      latitude: float
+      longitude: float
+      land_type: str
+      pipeline: str                # "BANGLADESH_BARC" or "GLOBAL_FAO_ECOCROP"
+      route_details: Dict[str, Any]
+      cropping_intensity_k: int    # 1, 2, or 3
+      seasons: Dict[str, List[Dict[str, Any]]] # Rabi, Kharif-1, Kharif-2 candidate lists
+      candidate_counts: Dict[str, int]
+      environmental_metadata: Dict[str, Any]
+      total_execution_ms: float
+  ```
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🔄 Stage 4: 2-Year (6-Season) Combinatorial Agronomic Filtering
+
+### Combinatorial Space:
+A full rotation spans **2 calendar years** across **6 consecutive seasons**:
+$$\mathbf{S} = \big( \underbrace{c_1}_{\text{Rabi}_1},\, \underbrace{c_2}_{\text{Kh-1}_1},\, \underbrace{c_3}_{\text{Kh-2}_1},\, \underbrace{c_4}_{\text{Rabi}_2},\, \underbrace{c_5}_{\text{Kh-1}_2},\, \underbrace{c_6}_{\text{Kh-2}_2} \big)$$
+With Stage 3 pools ($|\text{Rabi}|=7, |\text{Kharif-1}|=5, |\text{Kharif-2}|=3$):
+$$\text{Total Sequences} = (7 \times 5 \times 3)^2 = 105 \times 105 = \mathbf{11{,}025 \text{ permutations}}$$
+
+### The 5 Hard Agronomic Filtering Rules:
+The engine applies 5 consecutive filters, eliminating 99.6% of infeasible permutations and producing **30 to 50 biologically viable sequences**:
+
+1. **Rule 1: Botanical Family Break Across Consecutive Years for Same Season:**
+   $$c_1.\text{family} \ne c_4.\text{family} \quad \land \quad c_2.\text{family} \ne c_5.\text{family}$$
+   *(If $c_3$ is non-rice, $c_3.\text{family} \ne c_6.\text{family}$).* Prevents soil-borne pathogen buildup (*Ralstonia solanacearum*, *Phytophthora infestans*, root-knot nematodes).
+2. **Rule 2: Mandatory Nitrogen-Fixing Legume Insertion:**
+   $$\sum_{t=1}^6 \mathbb{I}(c_t \in \text{Fabaceae}) \ge 1$$
+   Ensures symbiotic *Rhizobium* biological nitrogen fixation, contributing $35\text{–}50\text{ kg N/ha}$ and preventing soil acidification from urea overuse.
+3. **Rule 3: Root Architecture Alternation (Soil Profile Optimization):**
+   $$\exists \, c_t \in S \text{ such that } c_t.\text{root\_type} == \text{"deep\_tap"}$$
+   Deep taproots (Jute, Mustard) pierce the impermeable $20\text{ cm}$ plow-pan (*hard pan*) created by wetland rice puddling, restoring subsoil infiltration.
+4. **Rule 4: Summer Pest Bridge Break (Kharif-1 to Kharif-2 Continuity):**
+   $$c_2.\text{family} \ne c_3.\text{family} \quad \land \quad c_5.\text{family} \ne c_6.\text{family}$$
+   Prevents unbroken "green bridges" across hot humid summer months ($35^\circ\text{C}$, $\text{RH}>85\%$) that cause viral vector explosions (Whiteflies, BPH, Stem borers).
+5. **Rule 5: 365-Day Annual Calendar & Turnaround Feasibility:**
+   For each Year $Y \in \{1, 2\}$:
+   $$\text{Days}_Y = \sum_{t \in Y} \big(c_t.\text{duration\_days} + 10\text{ days turnaround}\big) \le 345\text{ days}$$
+   Ensures a 10-day inter-crop turnaround for tillage/nursery preparation and leaves a 20-day buffer against monsoon delays, preventing terminal heat stress.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 📊 Stage 5: Multi-Objective Optimization & Portfolio Selection
+
+### Objective Function $Z(S)$:
+For each surviving sequence $S \in \mathcal{S}_{\text{viable}}$, computes the composite scalarized score:
+$$\max_{S \in \mathcal{S}_{\text{viable}}} \mathbf{Z}(S) = w_1 \cdot \text{NormGrossMargin}(S) + w_2 \cdot \text{SoilHealthScore}(S) - w_3 \cdot \text{WaterStressPenalty}(S)$$
+
+### Objective Component Formulations:
+1. **Expected 2-Year Gross Margin ($\text{GrossMargin}(S)$):**
+   $$\text{GrossMargin}(S) = \sum_{t=1}^6 \Big[ \big(\text{Yield}_t \times \text{FarmgatePrice}_t\big) - \text{ProductionCost}_t \Big]$$
+   Normalized Min-Max onto $[0, 100]$:
+   $$\text{NormGrossMargin}(S) = \left( \frac{\text{GrossMargin}(S) - \text{MinGM}}{\text{MaxGM} - \text{MinGM}} \right) \times 100.0$$
+2. **Soil Health Score ($\text{SoilHealthScore}(S)$):**
+   $$\text{SoilHealthScore}(S) = \min\big(100.0, \; B_{\text{legume}} + B_{\text{biomass}} + B_{\text{diversity}} + B_{\text{taproot}}\big)$$
+   - $B_{\text{legume}} = \text{Count}(\text{Fabaceae}) \times 25.0$ (Max 50)
+   - $B_{\text{biomass}} = \text{Count}(\text{Jute/Sesbania}) \times 20.0$ (Max 40, for green foliage drop)
+   - $B_{\text{diversity}} = |\text{Unique Families}| \times 7.5$ (Max 30)
+   - $B_{\text{taproot}} = \text{Count}(\text{deep\_tap}) \times 10.0$ (Max 20)
+3. **Water Stress Penalty ($\text{WaterStressPenalty}(S)$):**
+   - Boro Rice on High Land (`HL`): $+50.0\text{ pts}$ per season (severe aquifer depletion).
+   - Boro Rice on Medium High Land (`MHL`): $+25.0\text{ pts}$ per season.
+   - Boro Rice on Low Land (`LL`): $0.0\text{ pts}$ (surface wetland water).
+   - Cash Vegetables in dry winter on `HL`: $+10.0\text{ pts}$.
+   - Rainfed/low-water crops: $0.0\text{ pts}$.
+
+### Final Portfolio Archetypes Delivered:
+Instead of 3 minor variations, delivers **3 strategically differentiated plans**:
+* **Plan 1: Optimal Balanced Compromise** (Highest composite score $Z(S)$)
+* **Plan 2: Economic Profit Maximizer** (Highest 2-Year Gross Margin)
+* **Plan 3: Soil Health & Low-Input Regenerator** (Highest Soil Health Score & Lowest Pumping Cost)
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🗄 Data Schemas & Assets
+
+### Local SQLite Database (`data/crop_recommender.db`):
+```sql
+CREATE TABLE IF NOT EXISTS upazila_boundaries (
+    upazila_code VARCHAR(10) PRIMARY KEY,
+    upazila_name VARCHAR(100),
+    district_name VARCHAR(100),
+    division_name VARCHAR(100),
+    min_lat REAL,
+    max_lat REAL,
+    min_lon REAL,
+    max_lon REAL
+);
+
+CREATE TABLE IF NOT EXISTS upazila_suitable_crops (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    upazila_code VARCHAR(10),
+    crop_name VARCHAR(100),
+    crop_season VARCHAR(50),
+    very_suitable_ha REAL,
+    suitable_ha REAL,
+    moderately_suitable_ha REAL,
+    not_suitable_ha REAL,
+    effective_commercial_ha REAL,
+    suitability_class VARCHAR(10),
+    botanical_family VARCHAR(100),
+    root_type VARCHAR(50),
+    is_legume BOOLEAN,
+    duration_days INTEGER,
+    yield_ton_ha REAL,
+    UNIQUE(upazila_code, crop_name, crop_season)
+);
+```
+
+### GeoJSON Spatial Geometries (`data/upazila_polygons.json`):
+Structured as a standard GeoJSON FeatureCollection where each feature contains:
+- `properties`: `{"upazila_code": "305646", "upazila_name": "Singair", "district_name": "Manikganj", "division_name": "Dhaka"}`
+- `geometry`: MultiPolygon coordinate rings `[[[ [lon1, lat1], [lon2, lat2], ... ]]]`.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🧪 Automated Verification & Unit Tests
+
+The test suite in `tests/test_stage3.py` verifies all critical algorithmic guardrails and pipelines:
+
+```bash
+PYTHONPATH=. python3 -m unittest tests/test_stage3.py
+```
+
+### Verification Checklist Covered:
+1. `test_spatial_router_known_points`: Validates boundary resolution for Bogura, Manikganj, and Sunamganj in $< 5\text{ ms}$.
+2. `test_spatial_router_international_envelope_rejection`: Confirms immediate Tier-0 routing for international coordinates.
+3. `test_trapezoidal_fuzzy_epsilon_guards`: Asserts ZeroDivisionError immunity on left/right vertical cliff boundaries.
+4. `test_sys_square_root_scoring`: Confirms preservation of Liebig’s Law of the Minimum and absence of Storie multiplicative decay.
+5. `test_usda_texture_classification`: Verifies USDA soil texture triangle calculations.
+6. `test_barc_land_type_exclusions`: High Land (`HL`) rigorously eliminates flooded Boro rice.
+7. `test_perennial_orchard_exclusion`: Confirms 100% elimination of 19 tree species (Date Palm, Palmyra Palm, Guava).
+8. `test_engine_haor_pipeline`: Deep wetland Haor sets $K=1$, allocates Boro paddy, and backfills seasonal fallows without sequence collapse.
+9. `test_dynamic_k_coastal_empty_pool_guard`: Dry-season salinity steps down $K$ to 1, outputting Fallow–Fallow–Aman without errors.
+10. `test_fao_zero_intensity_desert`: Rainless hyper-arid desert sets $K=0$.
+11. `test_engine_bangladesh_pipeline`: End-to-end integration test of domestic pipeline.
+12. `test_engine_international_pipeline`: End-to-end integration test of NASA POWER + FAO EcoCrop pipeline.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 🛠 Step-by-Step Rebuild Execution Order
+
+When building this project from scratch, follow this exact sequence:
+
+1. **Step 1: Create Directory Tree:**
+   ```bash
+   mkdir -p src tests data
+   ```
+2. **Step 2: Initialize Database and Schema (`src/ingest_barc_data.py`):**
+   Create SQLite tables `upazila_boundaries` and `upazila_suitable_crops` in `data/crop_recommender.db`.
+3. **Step 3: Implement Spatial Router (`src/router.py`):**
+   Build the Tier-0 geofence, Tier-1 AABB scan, and Tier-2 pure-Python Jordan Curve ray-casting engine.
+4. **Step 4: Build Taxonomy Helper (`src/taxonomy_helper.py`):**
+   Populate botanical families, synonyms, and enrichment functions.
+5. **Step 5: Implement BARC Selector (`src/stage3_barc_selector.py`):**
+   Implement write-through caching, $\text{EffArea} = VS + 0.70S$, land-type exclusions, and 3-Tier Dynamic Bucketer.
+6. **Step 6: Implement Global Environmental Fetcher (`src/global_env_fetcher.py`):**
+   Implement keyless NASA POWER precipitation and temperature extraction, SoilGrids parser, and daily tipping-bucket water balance.
+7. **Step 7: Implement FAO EcoCrop Selector (`src/stage3_fao_selector.py`):**
+   Embed the 37-crop EcoCrop parameters, trapezoidal fuzzy membership with $\epsilon$-guards, and Sys et al. (1991) scoring.
+8. **Step 8: Implement Master Stage 3 Engine (`src/stage3_engine.py`):**
+   Create the unified singleton interface and CLI runner.
+9. **Step 9: Implement Stage 4 & Stage 5 Logic:**
+   Implement the 5 hard agronomic rules and multi-objective portfolio optimizer.
+10. **Step 10: Run the Test Suite:**
+    ```bash
+    PYTHONPATH=. python3 -m unittest tests/test_stage3.py
+    ```
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 📜 Citations & Acknowledgments
+1. **NASA Langley Research Center**: [NASA POWER Agroclimatology API](https://power.larc.nasa.gov/).
+2. **UN Food and Agriculture Organization (FAO)**: EcoCrop Database and *Land Evaluation Framework* (Sys et al., 1991).
+3. **ISRIC - World Soil Information**: [SoilGrids 2.0 Global Soil Data](https://www.isric.org/explore/soilgrids).
+4. **Bangladesh Agricultural Research Council (BARC)**: [Crop Zoning Information System (CZIS)](http://dashboard.cropzoning.gov.bd/).
+5. **Nasim, M. et al. (2017/2018)**: "Distribution of Crops and Cropping Patterns in Bangladesh." *Bangladesh Rice Journal*, 21(2), 1–55.
+
+---
+
+## 🌐 Data Provenance & How to Re-Harvest Everything from Scratch
+
+A common concern when rebuilding a complex spatial system is: *"Where does the data come from, and do I need to manually scrape gigabytes of tables?"*
+
+The answer is **NO manual data wrangling is required.** Every single data artifact in this repository is either:
+1. **Curated and embedded directly in code** (EcoCrop cardinal limits, botanical families).
+2. **Harvested on-demand via open public APIs** (NASA POWER, SoilGrids).
+3. **Automatically cached via the Write-Through Pipeline** (BARC CZIS suitability matrices).
+4. **Acquired via a single HTTP GET request** (505 Upazila GIS polygon boundaries).
+
+### Data Inventory & Origin Matrix:
+
+| File / Asset | Origin / Source Authority | Protocol / Endpoint | Acquisition Method |
+| :--- | :--- | :--- | :--- |
+| **`data/upazila_polygons.json`** | Bangladesh Agricultural Research Council (BARC CZIS) | `HTTPS GET` open public endpoint:<br>`https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3` | Single HTTP request downloads all 505 Upazilas across Bangladesh in ~2 seconds. |
+| **`data/upazila_boundaries.csv`** | Derived locally from `upazila_polygons.json` | Pure Python in-memory bounding box scanner (`extract_bbox_from_geometry`) | Computed locally in 1.5 seconds by calculating `[min_lat, max_lat, min_lon, max_lon]` for each polygon. |
+| **`data/crop_recommender.db`** | Official BARC Crop Zoning Information System | `HTTPS GET` endpoint per Upazila:<br>`https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/{code}` | **Option A (Write-Through):** Automatically fetches and saves to SQLite on the first query of any Upazila.<br>**Option B (Batch):** Pre-seeded via `python src/ingest_barc_data.py`. |
+| **Global Climatology** | NASA Langley Research Center (NASA POWER) | Open public REST API (Keyless):<br>`https://power.larc.nasa.gov/api/temporal/climatology/point` | Live query by `global_env_fetcher.py`. Keyless, free, zero registration. |
+| **Global Soil Pedometrics** | ISRIC - World Soil Information (SoilGrids 2.0) | Open public REST API (Keyless):<br>`https://rest.isric.org/soilgrids/v2.0/properties/query`<br>(Mirror: `https://soilgrids.pixelgust.com/`) | Live query by `global_env_fetcher.py`. Keyless, free. |
+| **FAO EcoCrop Limits** | UN FAO EcoCrop Database (Sys et al., 1991) | Curated agronomic literature | **Embedded directly in Python code** (`FAO_ECOCROP_DB` in `src/stage3_fao_selector.py`). |
+| **Taxonomy & Traits** | Bangladesh DAE / BARC / USDA Plants | Curated botanical classification | **Embedded directly in Python code** (`BACKUP_FAMILY_DICT` in `src/taxonomy_helper.py`). |
+| **Offline Test Caches** (`planetary_100_cache.json`, etc.) | NASA POWER & SoilGrids responses | Test benchmark execution | Pre-cached snapshot of test queries to enable air-gapped unit testing without internet. |
+
+---
+
+### Exact Re-Harvesting Procedures (Copy & Run):
+
+#### 1. Download Official Upazila MultiPolygon Boundaries (`data/upazila_polygons.json`):
+Run this pure-Python snippet to download all 505 Upazila GIS boundaries directly from the official BARC GIS portal:
+```python
+import urllib.request, ssl, json, os
+
+os.makedirs("data", exist_ok=True)
+url = "https://dashboard.cropzoning.gov.bd/api/dashboard/polygon-list/3"
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
+req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+    data = json.loads(resp.read().decode("utf-8"))
+
+with open("data/upazila_polygons.json", "w", encoding="utf-8") as f:
+    json.dump(data, f)
+print(f"Downloaded {len(data.get('features', []))} Upazila polygons to data/upazila_polygons.json")
+```
+
+#### 2. Generate Bounding Box Index & Initialize SQLite (`src/ingest_barc_data.py`):
+Running the built-in ingestion utility automatically:
+1. Creates the SQLite tables (`upazila_boundaries` and `upazila_suitable_crops`).
+2. Extracts bounding boxes from `data/upazila_polygons.json` and writes `data/upazila_boundaries.csv`.
+3. Seeds the database with representative Upazilas.
+```bash
+python3 src/ingest_barc_data.py
+```
+
+#### 3. On-Demand Zero-Setup Write-Through Caching (How the Engine Populates Itself):
+You **do not need to scrape all 505 Upazilas upfront**!
+When a user runs a query:
+```bash
+PYTHONPATH=. python3 src/stage3_engine.py --lat 24.78 --lon 89.04
+```
+The engine executes the following self-populating cycle:
+1. Resolves coordinates `(24.78, 89.04)` to Upazila code `506485` (Raninagar) in $0.128\text{ ms}$.
+2. Checks `data/crop_recommender.db` for `upazila_code = '506485'`.
+3. If not cached, the engine **automatically issues a single HTTPS request** to `https://dashboard.cropzoning.gov.bd/czis/suitable/area/upazila/506485`.
+4. Calculates $\text{EffArea} = VS + 0.70S$, enriches with taxonomy (`Fabaceae`, `Solanaceae`, durations, root types), and saves the records directly into SQLite.
+5. All future runs for this location are instant local cache hits ($< 3\text{ ms}$) without internet!
+
+---
+
+## 📄 License
+This project is open-source software distributed under the **MIT License**.

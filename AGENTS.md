@@ -61,7 +61,7 @@ s1: FarmerProfile -> FarmerProfile (validated, defaults applied)
 s2: farmer.location -> RawEnvironment (raw soil + weather payloads)
 s3: (FarmerProfile, RawEnvironment) -> EnvironmentalObservation
 s4: EnvironmentalObservation -> FeasibleCrops (feasible crops per season; loads data/crops/crops.json)
-s5: FeasibleCrops -> SequencePool (3-season sequences)
+s5: FeasibleCrops -> SequencePool (3-season sequences) Note: Update needs on season count.
 s6: (SequencePool, EnvironmentalObservation, FarmerProfile) -> EvaluationResult (evaluated sequences + Pareto flags)
 s7: EvaluationResult -> Explanation
 s8: (Explanation, EvaluationResult) -> RecommendationResponse
@@ -99,63 +99,166 @@ When done, give a short summary of what was created and any decisions you made t
 
 ## current work:
 
-# Task: Integrate the FAO Crop Calendar API
+# Task: Build Stage 3 (crop candidate pools) in this repo, with land-type validation from soil and weather data
 
-Build a module/client that queries the public FAO Crop Calendar REST API to fetch all available agricultural, seasonal, and crop calendar data for a given country and crop(s).
+## 1. Goal
+Given a farm location, return the list of crops that can grow there, per season. This is **Stage 3** of our Crop Sequence Recommender.
 
-## 1. API Configuration
-- **Base URL:** `https://fao.org`
-- **Authentication:** None required (public read-only endpoints).
-- **Content-Type:** `application/json` (except for the Excel download endpoint).
-- **Swagger Documentation:** `https://fao.org`
+A teammate already built Stage 3 in a separate repo: https://github.com/eskit2005/crop_sequence_recommender. It was meant to live in this repo. Do two things:
+1. Bring that Stage 3 logic into this repo, **Bangladesh path only**.
+2. Add a **land-type validation layer** that uses the data we already fetch (SoilGrids, NASA POWER, Open-Meteo) to check the land type the farmer gives.
 
-## 2. Endpoints to Implement
+Inspect this repo first and follow its conventions. Reuse the existing data fetchers here instead of writing new ones. You decide where everything goes.
 
-### A. Get Supported Countries (Lookup)
-- **Endpoint:** `GET /countries`
-- **Query Params:** `lang` (optional, string: `"en"`, `"fr"`, `"es"`, etc. Default: `"en"`)
-- **Purpose:** Retrieve all valid 2-letter `id_country` codes (e.g., `"CV"`, `"BD"`) and country names.
+**Out of scope for now:** the global (non-Bangladesh) path, and anything after Stage 3. For a location outside Bangladesh, return a clear "not supported yet" result. Keep the Stage 3 output format stable because a later stage will consume it.
 
-### B. Get Crops for a Country (Lookup)
-- **Endpoint:** `GET /countries/{id_country}/crops`
-- **Path Params:** `id_country` (required, string, e.g., `"CV"`)
-- **Query Params:** `lang` (optional, string)
-- **Purpose:** Retrieve all valid 4-digit crop IDs (e.g., `"0023"`), common names, and scientific names available for that specific country.
+## 2. Stage 3 behaviour to reproduce (read the teammate's code and `crop_sequence_recommender_architecture.md` in that repo)
+**Input:** latitude, longitude, `land_type` (HL, MHL, MLL, LL/VLL). Default is MHL.
 
-### C. Get Agro-Ecological Zones / Regions (Lookup)
-- **Endpoint:** `GET /countries/{id_country}/aez`
-- **Path Params:** `id_country` (required, string)
-- **Query Params:** `lang` (optional, string)
-- **Purpose:** Retrieve all sub-national regions and Agro-Ecological Zone (`aez`) IDs for filtering.
+**Flow:**
+1. **Locate.** Match the point to one of 505 Bangladesh upazilas (local districts) using boundary polygons (bounding-box prefilter, then point-in-polygon). Get the upazila code and district name.
+2. **Load crop data.** Read that upazila's crop suitability from the local BARC CZIS database. If it is missing, fetch it from the BARC endpoint, save it, and use it. If the fetch fails, borrow another upazila's data from the same district.
+3. **Score.** For each crop, `effective area = very suitable ha + 0.70 × suitable ha`.
+4. **Filter by land type.** Remove crops that cannot survive the flood level: no Boro rice on HL, no potato or cole crops on LL, and so on. Accept ML as MLL. Remove perennial tree crops.
+5. **Region rules (hard-coded district lists):**
+   - **Haor:** LL land in haor districts keeps only Boro and rice-type crops, one crop per season, K=1, summer seasons Fallow.
+   - **Coastal saline:** MLL or LL land in coastal districts. On deep land, dry seasons become Fallow, Boro is removed and only monsoon T. Aman stays.
+   - **High Barind:** HL land in Rajshahi, Chapai Nawabganj and Naogaon protects Chickpea in the Rabi list.
+6. **Bucket.** Pick the best crops per season: Rabi 7, Kharif-1 5, Kharif-2 3. Take the top crop of each plant group (pulses, tubers, oilseeds, fibres, cereals, vegetables) with effective area ≥ 300 ha first, then fill the rest by area. If a charland (MLL) upazila has no data, use the teammate's alluvial fallback crops.
+7. **K** = max(1, min(cap by land type, number of non-empty seasons)). The cap is 3 for HL and MHL, 2 for MLL, and 1 for haor and coastal LL.
+8. **Fallow.** Any empty season gets a Fallow placeholder (`crop_id` 999) so no list is ever empty.
 
-### D. Get Full Crop Calendar Data (Primary Data)
-- **Endpoint:** `GET /countries/{id_country}/cropCalendar`
-- **Path Params:** `id_country` (required, string)
-- **Query Params:**
-  - `crops` (optional/recommended, string: comma-separated 4-digit crop IDs, e.g., `"0023"` or `"0023,0045"`)
-  - `aez` (optional, string: comma-separated AEZ/region IDs)
-  - `lang` (optional, string: `"en"`)
-- **Purpose:** Fetch the complete crop calendar dataset. Extract and return all available fields from the JSON response, including:
-  - Crop details (name, scientific name, variety)
-  - Location/Zone details (region, AEZ name)
-  - Planting/Sowing windows (early, peak, and late start/end dates or dekads)
-  - Harvesting windows (early, peak, and late start/end dates or dekads)
-  - Agronomic parameters (seed rate/density, growing period length in days, water regime/irrigation type, and general comments/notes)
+**Output:** K, flags (haor, coastal saline, deep wetland), the three crop lists (name, family, root type, legume flag, duration, yield, effective area, tier, score), and the routing details.
 
-### E. Export Calendar as Excel (Optional Utility)
-- **Endpoint:** `GET /countries/{id_country}/cropCalendar/download`
-- **Path Params:** `id_country` (required, string)
-- **Query Params:** `crops` (optional, string), `aez` (optional, string), `lang` (optional, string)
-- **Purpose:** Stream and save the binary `.xlsx` file response if raw spreadsheet export is requested.
+**Known issues to handle:**
+- About half of the cached BARC rows have botanical family "Unknown" (for example Pumpkin, Cucumber, Barley, and "Ground Nut" as a legume). Every crop must get a correct family, root type and legume flag. The teammate has a taxonomy helper file that was never pushed. Use it if you get it, otherwise fill the missing crops yourself, and some cached rows are stale, so re-check them at read time.
+- Only about 190 of 505 upazilas are cached locally. Online fetching must work and save results.
+- Crop ids in the charland fallback must be the same on every run.
+- Do not copy the teammate's disabled TLS certificate checks.
 
-## 3. Implementation Requirements
-1. **Dynamic Resolution:** Allow users to search by either raw IDs (`id_country="CV"`, `crops="0023"`) OR human-readable names (e.g., `"Cabo Verde"`, `"Maize"`). If names are provided, resolve them first using Endpoints A and B before calling Endpoint D.
-2. **Fetch All Data When Unfiltered:** If `crops` or `aez` are omitted in Endpoint D, fetch and return all available crop calendars for the specified country.
-3. **Resilience & Error Handling:**
-   - Implement HTTP retry logic with exponential backoff for `429` or `5xx` responses.
-   - Handle `404` or empty array responses gracefully when a country has no data for a requested crop.
-   - Verify exact JSON key names dynamically or inspect the payload structure on the first call, as field names may vary slightly by country record.
-4. **Output Formatting:** Provide clean functions that return both the raw JSON payload and a normalized summary dictionary containing planting dates, harvest dates, seed rates, and growing cycle durations.
+## 3. Land-type validation (new)
+The farmer's land type is the main input. Use the data below only to **check** it, never to silently replace it.
+
+**Data we already fetch:**
+- **SoilGrids:** `clay, sand, silt, bdod, soc, phh2o, cec` at 6 depths (0–5, 5–15, 15–30, 30–60, 60–100, 100–200 cm). Raw values need converting: clay, sand, silt, soc and phh2o ÷ 10, bdod ÷ 100. Values can be null.
+- **NASA POWER:** `GWETTOP` and `GWETROOT` (soil wetness, 0–1), `PRECTOTCORR` (rain), `EVLAND`.
+- **Open-Meteo (daily archive):** `precipitation_sum`, `et0_fao_evapotranspiration`, and the grid point's `elevation`.
+
+**Compute four indicators, each scaled 0 (not flood-prone) to 1 (very flood-prone):**
+1. **Drainage** (SoilGrids): average clay over 15–100 cm. 0 at ≤ 25%, 1 at ≥ 45%. If topsoil sand ≥ 50%, subtract 0.3 (minimum 0).
+2. **Wetness** (NASA): July–September `GWETTOP`. Use the share of days above 0.85 if daily data exist, otherwise the mean.
+3. **Monsoon surplus** (Open-Meteo): June–October sum of (rain − et0), divided by 2500 mm, capped at 1.
+4. **Elevation** (Open-Meteo): (20 − elevation in m) / 20, kept between 0 and 1. If it is easy, use NASA SRTM elevation instead because it is finer.
+
+**Combine:** index = 0.35 elevation + 0.30 drainage + 0.20 wetness + 0.15 surplus. If a source is missing, leave it out and rescale the weights.
+**Class:** index < 0.30 → HL, < 0.50 → MHL, < 0.70 → MLL, otherwise LL.
+**Confidence:** high only if at least 3 indicators are available and the index is at least 0.08 away from a class boundary. Otherwise low.
+
+All of these numbers are starting values. Keep them in one config place and tune them in section 5.
+
+**Policy:**
+- Farmer value given: use it for Stage 3. Compare it with the estimate: same class = `match`, one class apart = `adjacent` (note only), two or more apart = `conflict`. On a high-confidence conflict, return a warning asking the farmer to confirm. Do not change the value.
+- Farmer value not given: use the estimate if confidence is high. If low, use MHL and flag it as an unconfirmed default.
+- A source that fails or returns null must never crash the run. It only lowers confidence.
+
+**Add to the output:** `land_type_check` with the farmer value, estimated class, confidence, agreement, the four indicator values, and a one-line plain-language message.
+
+## 4. Rules
+- Follow this repo's conventions and dependency choices. No network calls in tests: use recorded sample responses.
+- Deterministic: the same input gives the same output.
+- Do not invent data. State every assumption.
+
+## 5. Tests and calibration
+**Stage 3:** Raninagar (24.78, 89.04, MHL) includes Potato and Sunflower in Rabi. HL removes Boro. LL removes Potato, Solanaceae and cole crops. Dowarabazar (25.05, 91.56, LL) gives K=1 with Boro. Mongla (22.1532, 89.6591, MHL) gives K=1 with only T. Aman in Kharif-2. HL in Rajshahi keeps Chickpea in Rabi. ML is treated as MLL. No season list is ever empty. No selected crop has family "Unknown".
+**Validation:** missing sources lower confidence without crashing. Match, adjacent and conflict each produce the right output. Farmer value missing is handled as described above.
+**Calibration:** run the validation on places with a known land type: Raninagar (MHL), Dowarabazar (LL), Charghat (24.28, 88.75, HL), Mongla (MHL), plus any benchmark locations in the teammate's repo that carry a land type. Adjust the starting numbers, and report honestly how often the estimate matches.
+
+## 6. Report back
+What you built; test results; the calibration table (location, known class, estimated class, confidence); the final numbers you chose; assumptions; and anything in the teammate's spec or code that was unclear.
+
+
+
+
+
+
+
+***stage-5***
+
+Variables : 
+Soil nitrogen (N)
+Soil organic carbon (SOC)
+Soil pH
+Soil salinity (EC)
+Soil moisture
+
+
+Nitrogen & Moisture :  (For Now)
+
+Next soil nitrogen state:
+
+Variable
+Meaning
+Nt
+Initial soil nitrogen stock
+Ft
+Fertilizer nitrogen added
+Bt
+Biological nitrogen fixation
+Ot
+Nitrogen returned through organic amendments and residues
+Ut
+Nitrogen removed through crop uptake and harvest
+Lt
+Nitrogen lost through leaching, volatilization and other losses
+
+
+
+
+
+
+
+
+
+Next Crop’s Yield:
+
+
+
+Yt=Y,cNtNt+KN,cfWfC
+
+Y,c = Potential yield of crop c.
+KN,c = Crop-specific nitrogen response parameter.
+fW = Water-stress factor.
+fC = Other climate and management factors.
+
+Profit Calculation:
+
+
+
+
+
+
+Soil Optimization Function:
+
+
+First term rewards improvement in nitrogen stock.
+Second term rewards improvement in organic carbon.
+Third term penalizes nitrogen falling below a critical threshold.
+,, control the relative importance.
+
+(Intitally =0, until we find real organic carbon data)
+
+
+( The units Needed to be used as needed )
+
+
+Possible Modifications:
+
+Primary nitrogen value needed
+Engine rule: no sequence can add 2 exhaustive crops sequentially
+
+
+
+
 
 
 ## Behaviour
@@ -176,7 +279,7 @@ Build a module/client that queries the public FAO Crop Calendar REST API to fetc
 *** Do not waste token by reading all the files. Strictly follow this snippet ***
 Agent Context: cropseq codebase
 0. What this project is
-cropseq is a backend-only Python system that recommends a crop rotation for a farm. It is a pipeline of 8 stages (s1..s8). Stages 3–6 and 8 are stubs that return saved JSON fixtures. Stage 2 calls real external APIs. There is no frontend. There is no real agronomic logic yet.
+cropseq is a backend-only Python system that recommends a crop rotation for a farm. It is a pipeline of 9 stages (s0..s8): s0 is the chat intake, s1..s8 the pipeline. S1, S2, S3, S4, S5, S6, S7 and S8 are real; S6 uses clearly flagged mock crop economics. There is a separate frontend repo. CORS, an optional API key and deployment docs exist (see FRONTEND_SPEC.md).
 Working directory: D:\Josh\Nasa app. Package manager: uv. Python >=3.14. Layout: src/cropseq.
 Commands (run from project root, PowerShell):
 uv sync                        # install deps + lock
@@ -208,12 +311,13 @@ src/cropseq/
   __init__.py
   config.py                   # pydantic-settings Config, global `config` instance
   errors.py                   # CropseqError hierarchy with http_status
+  http.py                     # shared HttpClient used by stage adapters
   pipeline.py                 # run(profile) -> FinalResponse
   contracts/                  # common, farmer, environment, crops, sequences, evaluation, explanation
   stages/
     s1_intake/service.py
     s2_environment/{__init__,ports,service,adapters/{http,soilgrids,open_meteo},cache/{sqlite}}
-    s3_normalization/service.py
+    s3_normalization/{service, ports, adapters/fao}.py
     s4_filtering/{service,fixture.py,ports.py,adapters/fake.py}
     s5_sequences/service.py
     s6_optimization/service.py
@@ -240,7 +344,7 @@ contracts/farmer.py:
 - FarmerProfile(farm_id: str, location: Location, area_ha: float >0, budget_usd: float >=0, irrigation_quota_m3: float >=0, priorities: dict[str,float] = {}, soil_overrides: dict[str,float] = {}, attributes: dict[str,float|str] = {}).
 - priorities keys must match config.objectives.
 contracts/environment.py:
-- RawEnvironment(StageOutput): soil_raw: dict, weather_raw: dict, fetched_at: str — untouched API payloads.
+- RawEnvironment(StageOutput): soil_raw: dict, weather_raw: dict[str, dict] keyed by provider ("open_meteo", "nasa_power"), fetched_at: str — untouched API payloads.
 - SoilProfile(ph: float, organic_carbon_g_kg: float|None, texture: str|None, is_field_tested: bool, attributes: dict).
 - SeasonClimate(season: str, mean_temp_c: float, precipitation_mm: float, et0_mm: float, attributes: dict).
 - Environment(StageOutput): soil: SoilProfile, seasons: list[SeasonClimate].
@@ -264,7 +368,7 @@ Fields:
 - seasons: list[Season] (3 default seasons: 1–4, 5–8, 9–12)
 - objectives: list[str] = ["gross_margin", "water_m3", "soil_score"]
 - adapter_soil = "soilgrids" (alias ADAPTER_SOIL)
-- adapter_weather = "openmeteo" (alias ADAPTER_WEATHER)
+- adapter_weather = "openmeteo,nasa_power" (alias ADAPTER_WEATHER, comma-separated; both fetched by default)
 - adapter_crops = "fake", adapter_explainer = "fake"
 - adapters: dict[str, str] — filled by _sync_adapters as {"soil": ..., "weather": ..., "crops": ..., "explainer": ...}
 - llm_enabled: bool = False, llm_model: str = "gpt-4o-mini"
@@ -289,12 +393,14 @@ s8_audit	run(explanation: Explanation | None, evaluated: EvaluatedSequences | No
 s2 in detail (the only real one)
 service.py:
 - run(location) → builds service → _run_coroutine(service.fetch(...)) → RawEnvironment.
-- build_environment_service(soil_name=None, weather_name=None, cache_path=None) -> EnvironmentService — reads config.adapters, instantiates adapters + SQLiteCache.
+- build_environment_service(soil_name=None, weather_name=None, cache_path=None) -> EnvironmentService — reads config.adapters, instantiates adapters + SQLiteCache. `weather_name` may be a comma-separated list.
 - _build_soil_provider(name) — only "soilgrids"; anything else raises NotImplementedError.
-- _build_weather_provider(name) — accepts "openmeteo" or "open_meteo".
+- _build_weather_providers(names) — accepts "openmeteo"/"open_meteo" and "nasa_power". Weather failure raises UpstreamUnavailable("Sorry, try again...").
+
+NASA POWER adapter: adapters/nasa_power.py — NasaPowerAdapter, name = "nasa_power", BASE_URL = "https://power.larc.nasa.gov/api/temporal/daily/point", community AG, 18 parameters, dates as YYYYMMDD, returns raw JSON.
 - _get_planning_date_range(reference_year=2025) -> tuple[date, date] — derives 2025-01-01 .. 2025-12-31 from config.seasons, handles year-wrapping seasons.
 - _run_coroutine[T](coro) — runs async from sync code (thread fallback if a loop is running).
-- EnvironmentService(soil_provider, weather_provider, cache):
+- EnvironmentService(soil_provider, weather_providers, cache):
 - async fetch(latitude, longitude, start_date, end_date) -> RawEnvironment
 - Steps: build cache keys → cache lookup → parallel fetch of missing ones (asyncio.gather(return_exceptions=True)) → raise on exception (no fallback) → cache.set new payloads → return RawEnvironment with source="soil:... (api|cache), weather:...".
 ports.py (Protocols): SoilDataPort(name property, async fetch(lat, lon) -> dict), WeatherDataPort(name, async fetch(lat, lon, start_date, end_date) -> dict), CachePort(get, set). Aliases SoilProvider/WeatherProvider exist.
@@ -333,11 +439,17 @@ resources.md exists in the root. It documents sources in numbered form: 1) reque
 Open-Meteo gives exactly 3 daily series: temperature_2m_mean (°C), precipitation_sum (mm), et0_fao_evapotranspiration (mm, FAO-56 reference ET). The API supports more (humidity, wind, radiation, soil moisture/temperature) if we add variables to DAILY_VARIABLES.
 SoilGrids returns raw GeoJSON; pH comes back ×10 (d_factor: 10), SOC ×10, nitrogen ×100. Conversion belongs to S3.
 12. Known gaps / current state
-- S1, S3, S5, S6, S8 return fixtures and ignore inputs (stubs with TODOs).
-- S4 and S7 use in-stage fake adapters (adapters/fake.py in those folders). S2 has no fake.
-- SoilGrids is currently 503 → any run including s2 fails with httpx.HTTPStatusError → API returns 500 (not 504, because it isn't a CropseqError).
-- cli.py, data/crops/crops.json, real template.py/llm.py explainer adapters do not exist.
-- No dependencies have been added for persistence beyond stdlib sqlite3.
+- S0 chat intake exists (`/api/v1/intake/message`); rules adapter by default, LLM opt-in.
+- S1 echoes the real profile; S5 generates sequences from S4 pools; S8 assembles the real response. No fixture returns remain in those stages.
+- S6 uses mock crop economics from `data/crops/crop_params.json` (flagged in every response). Replace before real advice.
+- S7 defaults to the LLM explainer and falls back to the template on any failure.
+- S4 uses the real BARC database. S7 no longer has a fake adapter.
+- S3 has a FAO Crop Calendar adapter but `run()` does not call it yet.
+- `cropseq/http.py` is shared by S2 and S3.
+- Upstream httpx failures now return 504 through `api/main.py`.
+- API has CORS (`CORS_ORIGINS`) and an optional `API_KEY` (`X-API-Key`).
+- Deployment: `Dockerfile` + `.dockerignore`; see FRONTEND_SPEC.md section 9.
+- cli.py and data/crops/crops.json still do not exist.
 13. How to work here
 1. Read the target file and the contracts it uses.
 2. Keep run() as the only public function of a stage.

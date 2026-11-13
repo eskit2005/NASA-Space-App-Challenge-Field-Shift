@@ -1,0 +1,387 @@
+{
+  "maize": {
+    "family": "Poaceae",
+    "root_type": "deep_fibrous",
+    "is_legume": false
+  },
+  "potato": {
+    "family": "Solanaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "wheat": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "jute": {
+    "family": "Malvaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "t. aman dhan": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "tomato": {
+    "family": "Solanaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "chilli": {
+    "family": "Solanaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "brinjal": {
+    "family": "Solanaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "pumpkin": {
+    "family": "Cucurbitaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "cucumber": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "onion": {
+    "family": "Amaryllidaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "bottle gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "cotton": {
+    "family": "Malvaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "mustard": {
+    "family": "Brassicaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "ground nut": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "boro dhan": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "barley": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "sesame": {
+    "family": "Pedaliaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "water melon": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "t. aus dhan": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "sweet potato": {
+    "family": "Convolvulaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "sunflower": {
+    "family": "Asteraceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "soybean": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "proso millet": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "musk melon": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "mungbean": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "linseed": {
+    "family": "Linaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "kenaf": {
+    "family": "Malvaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "kaon": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "grass pea": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "gram / chickpea": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "cowpea": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "cauliflower": {
+    "family": "Brassicaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "cabbage": {
+    "family": "Brassicaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "broccoli": {
+    "family": "Brassicaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "b. aus dhan": {
+    "family": "Poaceae",
+    "root_type": "shallow_fibrous",
+    "is_legume": false
+  },
+  "sugarcane": {
+    "family": "Poaceae",
+    "root_type": "deep_fibrous",
+    "is_legume": false
+  },
+  "aroid": {
+    "family": "Araceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "stem amaranth": {
+    "family": "Amaranthaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "spinach": {
+    "family": "Amaranthaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "red amaranth": {
+    "family": "Amaranthaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "radish": {
+    "family": "Brassicaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "indian spinach": {
+    "family": "Basellaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "garlic": {
+    "family": "Amaryllidaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "coriander": {
+    "family": "Apiaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "carrot": {
+    "family": "Apiaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "pointed gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "ladys finger": {
+    "family": "Malvaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "colocasia": {
+    "family": "Araceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "lentil": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "palmyra palm": {
+    "family": "Arecaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "date palm": {
+    "family": "Arecaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "yard long bean": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "lemon": {
+    "family": "Rutaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "jujube": {
+    "family": "Rhamnaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "mango": {
+    "family": "Anacardiaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "litchi": {
+    "family": "Sapindaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "black gram": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "jackfruit": {
+    "family": "Moraceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "coconut": {
+    "family": "Arecaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "turmeric": {
+    "family": "Zingiberaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "sweet orange": {
+    "family": "Rutaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "pineapple": {
+    "family": "Bromeliaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "guava": {
+    "family": "Myrtaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "golden apple": {
+    "family": "Anacardiaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  },
+  "ginger": {
+    "family": "Zingiberaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "banana": {
+    "family": "Musaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "teasle gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "sponge gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "snake gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "ridge gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "country bean": {
+    "family": "Fabaceae",
+    "root_type": "nodulated",
+    "is_legume": true
+  },
+  "bitter gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "medium_tap",
+    "is_legume": false
+  },
+  "ash gourd": {
+    "family": "Cucurbitaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "papaya": {
+    "family": "Caricaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "betel leaf": {
+    "family": "Piperaceae",
+    "root_type": "shallow",
+    "is_legume": false
+  },
+  "tea": {
+    "family": "Theaceae",
+    "root_type": "deep_tap",
+    "is_legume": false
+  }
+}

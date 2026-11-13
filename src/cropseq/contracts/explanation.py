@@ -24,3 +24,5 @@ class FinalResponse(StageOutput):
     environment: Environment
     evaluated: EvaluatedSequences
     explanation: Explanation
+    # The sequence the backend recommends. Optional so older clients keep working.
+    recommended_sequence_id: str | None = None

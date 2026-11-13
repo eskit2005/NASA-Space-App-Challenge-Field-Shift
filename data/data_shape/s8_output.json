@@ -8,6 +8,7 @@
     "area_ha": 12.5,
     "budget_usd": 8000,
     "irrigation_quota_m3": 45000,
+    "land_type": "MHL",
     "priorities": {
       "gross_margin": 0.5,
       "water_m3": 0.3,
@@ -22,10 +23,14 @@
     }
   },
   "environment": {
+    "location": {
+      "latitude": 23.8103,
+      "longitude": 90.4125
+    },
     "soil": {
       "ph": 6.4,
       "organic_carbon_g_kg": 12.0,
-      "texture": "loam",
+      "texture": null,
       "is_field_tested": true,
       "attributes": {
         "clay_pct": 28.0,
@@ -36,31 +41,55 @@
     },
     "seasons": [
       {
-        "season": "season_1",
-        "mean_temp_c": 24.5,
-        "precipitation_mm": 120.0,
-        "et0_mm": 310.0,
-        "attributes": {}
+        "season": "Rabi",
+        "mean_temp_c": 21.5,
+        "precipitation_mm": 45.0,
+        "et0_mm": 240.0,
+        "attributes": {
+          "days": 120.0,
+          "source": "open_meteo"
+        }
       },
       {
-        "season": "season_2",
-        "mean_temp_c": 31.0,
-        "precipitation_mm": 480.0,
-        "et0_mm": 420.0,
-        "attributes": {}
+        "season": "Kharif-1",
+        "mean_temp_c": 30.5,
+        "precipitation_mm": 520.0,
+        "et0_mm": 430.0,
+        "attributes": {
+          "days": 122.0,
+          "source": "open_meteo"
+        }
       },
       {
-        "season": "season_3",
-        "mean_temp_c": 26.0,
-        "precipitation_mm": 95.0,
-        "et0_mm": 260.0,
-        "attributes": {}
+        "season": "Kharif-2",
+        "mean_temp_c": 28.5,
+        "precipitation_mm": 1100.0,
+        "et0_mm": 380.0,
+        "attributes": {
+          "days": 123.0,
+          "source": "open_meteo"
+        }
       }
     ],
+    "land_type_check": {
+      "farmer_land_type": "MHL",
+      "estimated_land_type": "MHL",
+      "used_land_type": "MHL",
+      "confidence": "high",
+      "agreement": "match",
+      "index": 0.3925,
+      "indicators": {
+        "drainage": 0.45,
+        "wetness": 0.2,
+        "monsoon_surplus": 0.4,
+        "elevation": 0.45
+      },
+      "message": "Your land type MHL matches the soil and weather estimate."
+    },
     "warnings": [
       "ph taken from farmer soil_overrides (field-tested), grid estimate ignored"
     ],
-    "source": "S3 normalization from RawEnvironment, 2026-10-05"
+    "source": "S3 normalization from RawEnvironment (soil:soilgrids (cache), weather:open_meteo (cache), nasa_power (cache))"
   },
   "evaluated": {
     "sequences": [
@@ -112,7 +141,7 @@
     "sections": {
       "water": "Estimated water demand of 9500 m3 for seq-001 sits well inside the 45000 m3 seasonal quota; seq-002 uses 8200 m3 for farmers prioritising water savings.",
       "soil": "Legume inclusion in seq-001 and seq-002 restores soil_score to 0.74/0.71 versus 0.52 for seq-003, where back-to-back cereals mine nitrogen.",
-      "rotation_risk": "seq-003 repeats wheat in season_1 and season_3, raising disease carry-over risk; no other candidate repeats a family in adjacent seasons."
+      "rotation_risk": "seq-003 repeats wheat in Rabi and Kharif-2, raising disease carry-over risk; no other candidate repeats a family in adjacent seasons."
     },
     "evidence": [
       {
@@ -132,6 +161,7 @@
     "warnings": [],
     "source": "S7 template explainer, 2026-10-05"
   },
+  "recommended_sequence_id": "seq-001",
   "warnings": [],
   "source": "S8 audit, 2026-10-05"
 }

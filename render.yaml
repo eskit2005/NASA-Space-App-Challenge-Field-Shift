@@ -1,0 +1,31 @@
+# Render blueprint for the cropseq backend.
+# 1. Builds the existing Dockerfile (Python 3.14 + uv lockfile).
+# 2. Exposes the API with a health check on /health.
+# 3. Keeps the SQLite cache on a small persistent disk.
+# 4. Secrets are entered in the Render dashboard, not committed.
+
+services:
+  - type: web
+    name: cropseq-api
+    runtime: docker
+    plan: starter
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false
+      - key: API_KEY
+        generateValue: true
+      - key: LLM_ENABLED
+        value: "true"
+      - key: LLM_MODEL
+        value: gpt-4o-mini
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CACHE_DB
+        value: /var/data/cache.sqlite
+    disk:
+      name: cropseq-cache
+      mountPath: /var/data
+      sizeGB: 1

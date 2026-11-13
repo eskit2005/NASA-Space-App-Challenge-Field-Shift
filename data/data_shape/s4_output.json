@@ -1,6 +1,6 @@
 {
   "by_season": {
-    "season_1": [
+    "Rabi": [
       {
         "crop_id": "wheat",
         "name": "Wheat",
@@ -38,7 +38,7 @@
         }
       }
     ],
-    "season_2": [
+    "Kharif-1": [
       {
         "crop_id": "rice",
         "name": "Rice",
@@ -58,7 +58,7 @@
         }
       }
     ],
-    "season_3": [
+    "Kharif-2": [
       {
         "crop_id": "wheat",
         "name": "Wheat",
@@ -97,6 +97,23 @@
       }
     ]
   },
+  "supported": true,
+  "land_type": "MHL",
+  "cropping_intensity_k": 3,
+  "flags": {
+    "haor": false,
+    "coastal_saline": false,
+    "deep_wetland": false
+  },
+  "routing": {
+    "is_bangladesh": true,
+    "upazila_code": "506485",
+    "upazila_name": "Raninagar",
+    "district_name": "Naogaon",
+    "division_name": "Rajshahi",
+    "method": "narrow_phase_pip",
+    "candidates_count": 2
+  },
   "warnings": [],
-  "source": "S4 filtering (crop catalog via 'web' adapter), 2026-10-05"
+  "source": "S4 filtering (crop catalog via 'barc' adapter)"
 }

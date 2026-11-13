@@ -8,6 +8,9 @@ Order of work:
    missing, saves new responses, and returns `RawEnvironment`.
 5. The pipeline passes that `RawEnvironment` to S3.
 
+Both weather sources (Open-Meteo and NASA POWER) must succeed for a run to
+count. If either fails, S2 raises `UpstreamUnavailable`.
+
 This stage does not clean or convert the data. It only fetches raw payloads.
 """
 
@@ -23,7 +26,9 @@ from typing import Any
 
 from cropseq.config import config
 from cropseq.contracts import FarmerProfile, Location, RawEnvironment
+from cropseq.errors import UpstreamUnavailable
 
+from .adapters.nasa_power import NasaPowerAdapter
 from .adapters.open_meteo import OpenMeteoAdapter
 from .adapters.soilgrids import SoilGridsAdapter
 from .cache.sqlite import SQLiteCache, make_cache_key
@@ -50,25 +55,26 @@ def _run_coroutine[T](coro: Coroutine[Any, Any, T]) -> T:
 
 
 class EnvironmentService:
-    """Coordinates the cache and the two adapters.
+    """Coordinates the cache and the adapters.
 
     Steps inside `fetch()`:
-    1. Build a cache key for soil and one for weather.
-    2. Look both up in the cache.
+    1. Build a cache key for soil and one for each weather provider.
+    2. Look all of them up in the cache.
     3. Fetch only the missing ones, at the same time.
-    4. Save new responses to the cache.
-    5. Return both raw payloads inside `RawEnvironment`.
+    4. Soil failure is a warning; weather failure stops the run.
+    5. Save new responses to the cache.
+    6. Return both raw payloads inside `RawEnvironment`.
     """
 
     def __init__(
         self,
         *,
         soil_provider: SoilDataPort,
-        weather_provider: WeatherDataPort,
+        weather_providers: list[WeatherDataPort],
         cache: CachePort,
     ) -> None:
         self.soil_provider = soil_provider
-        self.weather_provider = weather_provider
+        self.weather_providers = weather_providers
         self.cache = cache
 
     async def fetch(
@@ -89,30 +95,39 @@ class EnvironmentService:
         }
 
         soil_key = make_cache_key(self.soil_provider.name, soil_request)
-        weather_key = make_cache_key(self.weather_provider.name, weather_request)
+        weather_keys = {
+            provider.name: make_cache_key(provider.name, weather_request)
+            for provider in self.weather_providers
+        }
 
         # 1. Cache lookup: same provider + same request = same key.
         cached_soil = self.cache.get(soil_key)
-        cached_weather = self.cache.get(weather_key)
+        cached_weather = {
+            provider.name: self.cache.get(weather_keys[provider.name])
+            for provider in self.weather_providers
+        }
 
-        # 2. Fetch only what the cache does not have. Both calls run in parallel.
-        tasks = []
-        task_indices: dict[str, int] = {}
+        # 2. Fetch only what the cache does not have. All calls run in parallel.
+        tasks: list[Coroutine[Any, Any, dict[str, Any]]] = []
+        soil_task_index: int | None = None
+        weather_task_indices: dict[str, int] = {}
+
         if cached_soil is None:
-            task_indices["soil"] = len(tasks)
+            soil_task_index = len(tasks)
             tasks.append(
                 self.soil_provider.fetch(latitude=latitude, longitude=longitude)
             )
-        if cached_weather is None:
-            task_indices["weather"] = len(tasks)
-            tasks.append(
-                self.weather_provider.fetch(
-                    latitude=latitude,
-                    longitude=longitude,
-                    start_date=start_date,
-                    end_date=end_date,
+        for provider in self.weather_providers:
+            if cached_weather[provider.name] is None:
+                weather_task_indices[provider.name] = len(tasks)
+                tasks.append(
+                    provider.fetch(
+                        latitude=latitude,
+                        longitude=longitude,
+                        start_date=start_date,
+                        end_date=end_date,
+                    )
                 )
-            )
 
         results: list[Any] = (
             await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
@@ -127,7 +142,8 @@ class EnvironmentService:
             soil = cached_soil
             soil_source = f"{self.soil_provider.name} (cache)"
         else:
-            soil_res = results[task_indices["soil"]]
+            assert soil_task_index is not None
+            soil_res = results[soil_task_index]
             if isinstance(soil_res, Exception):
                 soil = {}
                 soil_source = "unavailable"
@@ -143,26 +159,33 @@ class EnvironmentService:
         if isinstance(soil, dict):
             warnings.extend(soil.get("errors", []))
 
-        # 4. Resolve weather the same way.
-        if cached_weather is not None:
-            weather = cached_weather
-            weather_source = f"{self.weather_provider.name} (cache)"
-        else:
-            weather_res = results[task_indices["weather"]]
-            if isinstance(weather_res, Exception):
-                raise weather_res
-            weather = weather_res
-            weather_source = f"{self.weather_provider.name} (api)"
-            self.cache.set(
-                weather_key, self.weather_provider.name, weather_request, weather
-            )
+        # 4. Resolve weather: every configured provider must succeed.
+        weather: dict[str, dict[str, Any]] = {}
+        weather_sources: list[str] = []
+        for provider in self.weather_providers:
+            name = provider.name
+            cached = cached_weather[name]
+            if cached is not None:
+                weather[name] = cached
+                weather_sources.append(f"{name} (cache)")
+                continue
+
+            result = results[weather_task_indices[name]]
+            if isinstance(result, Exception):
+                raise UpstreamUnavailable(
+                    f"Sorry, try again. Weather source '{name}' failed: {result}"
+                ) from result
+
+            weather[name] = result
+            weather_sources.append(f"{name} (api)")
+            self.cache.set(weather_keys[name], name, weather_request, result)
 
         return RawEnvironment(
             soil_raw=soil,
             weather_raw=weather,
             fetched_at=datetime.now(UTC).isoformat(),
             warnings=warnings,
-            source=f"soil:{soil_source}, weather:{weather_source}",
+            source=f"soil:{soil_source}, weather:{', '.join(weather_sources)}",
         )
 
 
@@ -175,13 +198,26 @@ def _build_soil_provider(name: str) -> SoilDataPort:
     )
 
 
-def _build_weather_provider(name: str) -> WeatherDataPort:
-    """Return the weather adapter for a config name. Only Open-Meteo exists."""
-    if name in {"openmeteo", "open_meteo"}:
-        return OpenMeteoAdapter()
-    raise NotImplementedError(
-        f"Weather adapter '{name}' is not supported. Supported: 'openmeteo'."
-    )
+def _build_weather_providers(names: list[str]) -> list[WeatherDataPort]:
+    """Return one weather adapter per config name.
+
+    Supported: 'openmeteo'/'open_meteo' and 'nasa_power'.
+    """
+    providers: list[WeatherDataPort] = []
+    for name in names:
+        key = name.strip().lower()
+        if key in {"openmeteo", "open_meteo"}:
+            providers.append(OpenMeteoAdapter())
+        elif key in {"nasa_power", "nasa"}:
+            providers.append(NasaPowerAdapter())
+        else:
+            raise NotImplementedError(
+                f"Weather adapter '{name}' is not supported. "
+                "Supported: 'openmeteo', 'nasa_power'."
+            )
+    if not providers:
+        raise NotImplementedError("At least one weather adapter is required.")
+    return providers
 
 
 def _get_planning_date_range(reference_year: int = 2025) -> tuple[date, date]:
@@ -220,20 +256,23 @@ def build_environment_service(
     """Build the service from config.
 
     1. Read the soil adapter name (default 'soilgrids').
-    2. Read the weather adapter name (default 'openmeteo').
-    3. Create both adapters and the SQLite cache.
+    2. Read the weather adapter names (default 'openmeteo,nasa_power').
+    3. Create all adapters and the SQLite cache.
     """
     soil_adapter_name = soil_name or config.adapters.get("soil", "soilgrids")
-    weather_adapter_name = weather_name or config.adapters.get("weather", "openmeteo")
+    weather_spec = weather_name or config.adapters.get(
+        "weather", "openmeteo,nasa_power"
+    )
+    weather_names = [name for name in weather_spec.split(",") if name.strip()]
     db_path = cache_path or config.cache_db
 
     soil_provider = _build_soil_provider(soil_adapter_name)
-    weather_provider = _build_weather_provider(weather_adapter_name)
+    weather_providers = _build_weather_providers(weather_names)
     cache = SQLiteCache(db_path)
 
     return EnvironmentService(
         soil_provider=soil_provider,
-        weather_provider=weather_provider,
+        weather_providers=weather_providers,
         cache=cache,
     )
 

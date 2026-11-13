@@ -1,0 +1,14 @@
+{
+  "messages": [
+    {
+      "role": "farmer",
+      "content": "My farm is in Raninagar, Naogaon. It is 12.5 hectares."
+    },
+    {
+      "role": "farmer",
+      "content": "My budget is 8000 USD and I can use 45000 m3 of water. The land type is MHL."
+    }
+  ],
+  "draft": {},
+  "farm_id": "farm-001"
+}
