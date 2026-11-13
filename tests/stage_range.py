@@ -7,6 +7,7 @@ Usage:
 import sys
 from typing import Any
 
+from cropseq.stages.s0_intake import service as s0
 from cropseq.stages.s1_intake import service as s1
 from cropseq.stages.s2_environment import service as s2
 from cropseq.stages.s3_normalization import service as s3
@@ -16,7 +17,7 @@ from cropseq.stages.s6_optimization import service as s6
 from cropseq.stages.s7_explanation import service as s7
 from cropseq.stages.s8_audit import service as s8
 
-STAGES = ("s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8")
+STAGES = ("s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8")
 
 
 def run_range(start: str, end: str) -> dict[str, Any]:
@@ -30,8 +31,13 @@ def run_range(start: str, end: str) -> dict[str, Any]:
 
     out: dict[str, Any] = {}
     for name in STAGES[first : last + 1]:
-        if name == "s1":
-            result = s1.run(out.get("s1"))
+        if name == "s0":
+            result = s0.run()
+        elif name == "s1":
+            # Use the profile finished by s0 when the run started there.
+            finished = out.get("s0")
+            profile = finished.profile if finished is not None else None
+            result = s1.run(profile)
         elif name == "s2":
             result = s2.run()
         elif name == "s3":
@@ -45,7 +51,12 @@ def run_range(start: str, end: str) -> dict[str, Any]:
         elif name == "s7":
             result = s7.run(out.get("s6"))
         else:
-            result = s8.run(out.get("s7"), out.get("s6"))
+            result = s8.run(
+                out.get("s7"),
+                out.get("s6"),
+                out.get("s1"),
+                out.get("s3"),
+            )
         out[name] = result
         print(f"{name} -> {type(result).__name__}")
 

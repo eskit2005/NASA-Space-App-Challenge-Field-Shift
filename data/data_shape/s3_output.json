@@ -1,8 +1,12 @@
 {
+  "location": {
+    "latitude": 23.8103,
+    "longitude": 90.4125
+  },
   "soil": {
     "ph": 6.4,
     "organic_carbon_g_kg": 12.0,
-    "texture": "loam",
+    "texture": null,
     "is_field_tested": true,
     "attributes": {
       "clay_pct": 28.0,
@@ -13,29 +17,53 @@
   },
   "seasons": [
     {
-      "season": "season_1",
-      "mean_temp_c": 24.5,
-      "precipitation_mm": 120.0,
-      "et0_mm": 310.0,
-      "attributes": {}
+      "season": "Rabi",
+      "mean_temp_c": 21.5,
+      "precipitation_mm": 45.0,
+      "et0_mm": 240.0,
+      "attributes": {
+        "days": 120.0,
+        "source": "open_meteo"
+      }
     },
     {
-      "season": "season_2",
-      "mean_temp_c": 31.0,
-      "precipitation_mm": 480.0,
-      "et0_mm": 420.0,
-      "attributes": {}
+      "season": "Kharif-1",
+      "mean_temp_c": 30.5,
+      "precipitation_mm": 520.0,
+      "et0_mm": 430.0,
+      "attributes": {
+        "days": 122.0,
+        "source": "open_meteo"
+      }
     },
     {
-      "season": "season_3",
-      "mean_temp_c": 26.0,
-      "precipitation_mm": 95.0,
-      "et0_mm": 260.0,
-      "attributes": {}
+      "season": "Kharif-2",
+      "mean_temp_c": 28.5,
+      "precipitation_mm": 1100.0,
+      "et0_mm": 380.0,
+      "attributes": {
+        "days": 123.0,
+        "source": "open_meteo"
+      }
     }
   ],
+  "land_type_check": {
+    "farmer_land_type": "MHL",
+    "estimated_land_type": "MHL",
+    "used_land_type": "MHL",
+    "confidence": "high",
+    "agreement": "match",
+    "index": 0.3925,
+    "indicators": {
+      "drainage": 0.45,
+      "wetness": 0.2,
+      "monsoon_surplus": 0.4,
+      "elevation": 0.45
+    },
+    "message": "Your land type MHL matches the soil and weather estimate."
+  },
   "warnings": [
     "ph taken from farmer soil_overrides (field-tested), grid estimate ignored"
   ],
-  "source": "S3 normalization from RawEnvironment, 2026-10-05"
+  "source": "S3 normalization from RawEnvironment (soil:soilgrids (cache), weather:open_meteo (cache), nasa_power (cache))"
 }

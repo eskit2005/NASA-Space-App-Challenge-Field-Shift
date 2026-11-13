@@ -1,0 +1,44 @@
+{
+  "warnings": [
+    "Farm location approximated from the centre of Raninagar upazila."
+  ],
+  "source": "S0 intake (rules)",
+  "reply": "Thanks - I have everything I need. Hold on while I work out the best crop rotation for your farm.",
+  "draft": {
+    "location": {
+      "latitude": 24.714579297,
+      "longitude": 88.9974351905
+    },
+    "area_ha": 12.5,
+    "budget_usd": 8000.0,
+    "irrigation_quota_m3": 45000.0,
+    "land_type": "MHL",
+    "priorities": {},
+    "soil_overrides": {},
+    "attributes": {
+      "upazila": "Raninagar",
+      "district": "Naogaon",
+      "location_source": "upazila_centre"
+    }
+  },
+  "missing_fields": [],
+  "is_complete": true,
+  "profile": {
+    "farm_id": "farm-001",
+    "location": {
+      "latitude": 24.714579297,
+      "longitude": 88.9974351905
+    },
+    "area_ha": 12.5,
+    "budget_usd": 8000.0,
+    "irrigation_quota_m3": 45000.0,
+    "land_type": "MHL",
+    "priorities": {},
+    "soil_overrides": {},
+    "attributes": {
+      "upazila": "Raninagar",
+      "district": "Naogaon",
+      "location_source": "upazila_centre"
+    }
+  }
+}

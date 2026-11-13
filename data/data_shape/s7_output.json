@@ -3,7 +3,7 @@
   "sections": {
     "water": "Estimated water demand of 9500 m3 for seq-001 sits well inside the 45000 m3 seasonal quota; seq-002 uses 8200 m3 for farmers prioritising water savings.",
     "soil": "Legume inclusion in seq-001 and seq-002 restores soil_score to 0.74/0.71 versus 0.52 for seq-003, where back-to-back cereals mine nitrogen.",
-    "rotation_risk": "seq-003 repeats wheat in season_1 and season_3, raising disease carry-over risk; no other candidate repeats a family in adjacent seasons."
+    "rotation_risk": "seq-003 repeats wheat in Rabi and Kharif-2, raising disease carry-over risk; no other candidate repeats a family in adjacent seasons."
   },
   "evidence": [
     {

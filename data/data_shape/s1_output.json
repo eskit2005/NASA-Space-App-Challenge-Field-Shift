@@ -7,6 +7,7 @@
   "area_ha": 12.5,
   "budget_usd": 8000,
   "irrigation_quota_m3": 45000,
+  "land_type": "MHL",
   "priorities": {
     "gross_margin": 0.5,
     "water_m3": 0.3,

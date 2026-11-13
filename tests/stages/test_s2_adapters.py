@@ -1,4 +1,4 @@
-"""Unit tests for S2 adapters (SoilGrids, Open-Meteo, HttpClient)."""
+"""Unit tests for S2 adapters (SoilGrids, Open-Meteo, NASA POWER, HttpClient)."""
 
 from datetime import date
 from unittest.mock import AsyncMock, patch
@@ -7,6 +7,7 @@ import httpx
 import pytest
 
 from cropseq.stages.s2_environment.adapters.http import HttpClient
+from cropseq.stages.s2_environment.adapters.nasa_power import NasaPowerAdapter
 from cropseq.stages.s2_environment.adapters.open_meteo import OpenMeteoAdapter
 from cropseq.stages.s2_environment.adapters.soilgrids import SoilGridsAdapter
 
@@ -70,6 +71,40 @@ async def test_open_meteo_adapter_query_structure() -> None:
     assert params["end_date"] == "2025-01-10"
     assert "et0_fao_evapotranspiration" in params["daily"]
     assert params["timezone"] == "auto"
+
+
+@pytest.mark.anyio
+async def test_nasa_power_adapter_query_structure() -> None:
+    mock_http = AsyncMock(spec=HttpClient)
+    mock_http.get_json.return_value = {
+        "properties": {"parameter": {"T2M_MAX": {"20250101": 30.1}}}
+    }
+
+    adapter = NasaPowerAdapter(http_client=mock_http)
+    assert adapter.name == "nasa_power"
+
+    start = date(2025, 1, 1)
+    end = date(2025, 12, 31)
+    res = await adapter.fetch(
+        latitude=23.8103,
+        longitude=90.4125,
+        start_date=start,
+        end_date=end,
+    )
+    assert res == {"properties": {"parameter": {"T2M_MAX": {"20250101": 30.1}}}}
+
+    mock_http.get_json.assert_called_once()
+    call_args = mock_http.get_json.call_args
+    assert call_args[0][0] == NasaPowerAdapter.BASE_URL
+    params = call_args[1]["params"]
+    assert params["latitude"] == 23.8103
+    assert params["longitude"] == 90.4125
+    assert params["start"] == "20250101"
+    assert params["end"] == "20251231"
+    assert params["community"] == "AG"
+    assert params["format"] == "JSON"
+    assert params["header"] == "true"
+    assert params["parameters"].split(",") == list(NasaPowerAdapter.PARAMETERS)
 
 
 @pytest.mark.anyio

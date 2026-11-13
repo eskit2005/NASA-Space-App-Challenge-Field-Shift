@@ -4,8 +4,15 @@ run(profile) -> FinalResponse
 """
 
 from .config import config
-from .contracts import EvaluatedSequences, FarmerProfile, FinalResponse
+from .contracts import (
+    EvaluatedSequences,
+    FarmerProfile,
+    FinalResponse,
+    IntakeReply,
+    IntakeTurn,
+)
 from .errors import CropseqError
+from .stages.s0_intake import service as s0
 from .stages.s1_intake import service as s1
 from .stages.s2_environment import service as s2
 from .stages.s3_normalization import service as s3
@@ -28,6 +35,11 @@ def _check_metric_keys(evaluated: EvaluatedSequences) -> None:
             )
 
 
+def run_intake(turn: IntakeTurn) -> IntakeReply:
+    """S0 only: the chat endpoint. The full pipeline starts after completion."""
+    return s0.run(turn)
+
+
 def run(profile: FarmerProfile) -> FinalResponse:
     """Execute S1..S8 in order and return the audited recommendation."""
     farmer = s1.run(profile)
@@ -38,4 +50,9 @@ def run(profile: FarmerProfile) -> FinalResponse:
     evaluated = s6.run(pool=pool, environment=environment, profile=farmer)
     _check_metric_keys(evaluated)
     explanation = s7.run(evaluated)
-    return s8.run(explanation=explanation, evaluated=evaluated)
+    return s8.run(
+        explanation=explanation,
+        evaluated=evaluated,
+        profile=farmer,
+        environment=environment,
+    )

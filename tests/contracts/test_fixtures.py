@@ -14,13 +14,21 @@ from cropseq.contracts import (
     FarmerProfile,
     FeasibleCrops,
     FinalResponse,
+    IntakeReply,
+    IntakeTurn,
     RawEnvironment,
     SequencePool,
 )
 
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "data_shape"
 
+INPUT_CONTRACTS: dict[str, type] = {
+    "s0_input.json": IntakeTurn,
+    "s1_input.json": FarmerProfile,
+}
+
 OUTPUT_CONTRACTS: dict[str, type] = {
+    "s0_output.json": IntakeReply,
     "s1_output.json": FarmerProfile,
     "s2_output.json": RawEnvironment,
     "s3_output.json": Environment,
@@ -37,12 +45,13 @@ def load(name: str) -> dict:
 
 
 def test_fixture_dir_holds_exactly_the_expected_files() -> None:
-    expected = {"s1_input.json", *OUTPUT_CONTRACTS}
+    expected = {*INPUT_CONTRACTS, *OUTPUT_CONTRACTS}
     assert {p.name for p in FIXTURE_DIR.glob("*.json")} == expected
 
 
-def test_s1_input_matches_farmer_profile() -> None:
-    FarmerProfile.model_validate(load("s1_input.json"))
+@pytest.mark.parametrize("name,model", sorted(INPUT_CONTRACTS.items()))
+def test_input_fixture_matches_contract(name: str, model: type) -> None:
+    model.model_validate(load(name))
 
 
 @pytest.mark.parametrize("name,model", sorted(OUTPUT_CONTRACTS.items()))

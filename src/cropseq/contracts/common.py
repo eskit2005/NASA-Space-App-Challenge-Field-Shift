@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 class Season(BaseModel):
     """One growing season. Seasons are DATA, never hard-coded in stages."""
 
-    name: str  # e.g. "season_1" (edit names/months in config.py)
+    name: str  # e.g. "Rabi" (edit names/months in config.py)
     start_month: int = Field(ge=1, le=12)
     end_month: int = Field(ge=1, le=12)  # may be < start_month if it wraps the year
 
