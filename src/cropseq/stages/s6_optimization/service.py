@@ -9,17 +9,32 @@ from cropseq.contracts import (
     SequencePool,
 )
 
-FIXTURE = Path(__file__).resolve().parents[4] / "data" / "data_shape" / "s6_output.json"
+DATA = Path(__file__).resolve().parents[4] / "data" / "data_shape"
+S1_OUTPUT = DATA / "s1_output.json"
+S3_OUTPUT = DATA / "s3_output.json"
+S5_OUTPUT = DATA / "s5_output.json"
+OUTPUT = DATA / "s6_output.json"
 
 
 def run(
-    pool: SequencePool,
-    environment: Environment,
-    profile: FarmerProfile,
+    pool: SequencePool | None = None,
+    environment: Environment | None = None,
+    profile: FarmerProfile | None = None,
 ) -> EvaluatedSequences:
     """Score every candidate for each configured objective and flag Pareto.
 
-    Stub: returns the s6 fixture. TODO: score `pool` using `environment`,
+    Standalone: loads s5_output.json, s3_output.json and s1_output.json.
+    Stub: returns s6_output.json. TODO: score `pool` using `environment`,
     `profile.priorities` and config.objectives.
     """
-    return EvaluatedSequences.model_validate_json(FIXTURE.read_text(encoding="utf-8"))
+    if pool is None:
+        pool = SequencePool.model_validate_json(S5_OUTPUT.read_text(encoding="utf-8"))
+    if environment is None:
+        environment = Environment.model_validate_json(
+            S3_OUTPUT.read_text(encoding="utf-8")
+        )
+    if profile is None:
+        profile = FarmerProfile.model_validate_json(
+            S1_OUTPUT.read_text(encoding="utf-8")
+        )
+    return EvaluatedSequences.model_validate_json(OUTPUT.read_text(encoding="utf-8"))

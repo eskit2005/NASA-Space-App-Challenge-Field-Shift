@@ -40,7 +40,7 @@ cropseq/
 │   │   └── explanation.py  # EvidenceReference, Explanation, RecommendationResponse
 │   ├── stages/
 │   │   ├── s1_intake/
-│   │   ├── s2_environment/  # ports.py (SoilProvider, WeatherProvider), adapters/{fake.py, soilgrids.py, openmeteo.py}, service.py
+│   │   ├── s2_environment/  # ports.py (SoilProvider, WeatherProvider), adapters/{soilgrids.py, openmeteo.py}, service.py
 │   │   ├── s3_normalization/
 │   │   ├── s4_filtering/
 │   │   ├── s5_sequences/
@@ -48,8 +48,8 @@ cropseq/
 │   │   ├── s7_explanation/  # ports.py (Explainer), adapters/{template.py, llm.py}, service.py
 │   │   └── s8_audit/
 │   ├── pipeline.py   # run(profile) -> RecommendationResponse; wires s1..s8
-│   ├── config.py     # pydantic-settings; selects adapters (e.g. ENV_PROVIDER=fake|real, EXPLAINER=template|llm)
-│   ├── api/{main.py, routes.py, deps.py}
+│   ├── config.py     # pydantic-settings; selects adapters (e.g. ADAPTER_SOIL=soilgrids, EXPLAINER=llm)
+│   ├── api/{main.py, routes.py}
 │   └── cli.py        # Typer: `cropseq run <profile.json>`, `cropseq stage <name> <input.json>`
 └── tests/
     ├── contracts/      # each fixture validates against its contract
@@ -68,14 +68,14 @@ s8: (Explanation, EvaluationResult) -> RecommendationResponse
 Base the models on typical fields: FarmerProfile (farm_id, lat, lon, area_hectares, budget_usd, irrigation_quota_m3, priorities, optional soil_overrides), SoilProfile (ph, clay/sand/silt fractions, organic_carbon_g_kg, total_nitrogen_g_kg, is_field_tested), Crop (crop_id, common_name, botanical_family, suitable_seasons, ph tolerance range, growth_days, kc coefficients, baseline yield/price/cost, nitrogen_balance, root_depth_class), EvaluatedSequence (sequence_id, crops, gross_margin_usd, irrigation_demand_m3, soil_health_score, is_pareto_optimal). Use sensible validation (ge/le bounds). Keep models small; they will evolve.
 
 ## Stubs
-Each stage's `run` returns data loaded from its fixture, validated by the output contract. Real adapters (soilgrids.py, openmeteo.py, llm.py) may be minimal classes implementing the port with `raise NotImplementedError` plus a TODO comment. fake.py and template.py adapters must work and be the defaults.
+Each stage's `run` returns data loaded from its fixture, validated by the output contract. S2 is the exception: it calls the real SoilGrids/Open-Meteo APIs through its ports, and there is no fake provider. `template.py` is the default explainer adapter.
 
 ## API
 FastAPI app with:
-- GET /health
-- POST /api/v1/recommendations/optimize (FarmerProfile -> RecommendationResponse)
-- POST /api/v1/stages/{stage_name}/run (debug: raw JSON in, stage output out)
-Routes call pipeline/stage functions only.
+- GET /health -> {"status": "ok"}
+- POST /api/v1/recommendations/optimize (FarmerProfile -> FinalResponse)
+Routes call `pipeline.run` only. No debug stage endpoint (dropped by decision).
+OpenAPI docs at /docs.
 
 ## Setup steps to execute
 1. `uv init` (src layout, package name cropseq), add dependencies and dev group, generate lockfile.
@@ -98,7 +98,64 @@ Architecture rules above (short), how to run (CLI, API, tests), how to add a sta
 When done, give a short summary of what was created and any decisions you made that deviate from this spec.
 
 ## current work:
-data shape
+
+# Task: Integrate the FAO Crop Calendar API
+
+Build a module/client that queries the public FAO Crop Calendar REST API to fetch all available agricultural, seasonal, and crop calendar data for a given country and crop(s).
+
+## 1. API Configuration
+- **Base URL:** `https://fao.org`
+- **Authentication:** None required (public read-only endpoints).
+- **Content-Type:** `application/json` (except for the Excel download endpoint).
+- **Swagger Documentation:** `https://fao.org`
+
+## 2. Endpoints to Implement
+
+### A. Get Supported Countries (Lookup)
+- **Endpoint:** `GET /countries`
+- **Query Params:** `lang` (optional, string: `"en"`, `"fr"`, `"es"`, etc. Default: `"en"`)
+- **Purpose:** Retrieve all valid 2-letter `id_country` codes (e.g., `"CV"`, `"BD"`) and country names.
+
+### B. Get Crops for a Country (Lookup)
+- **Endpoint:** `GET /countries/{id_country}/crops`
+- **Path Params:** `id_country` (required, string, e.g., `"CV"`)
+- **Query Params:** `lang` (optional, string)
+- **Purpose:** Retrieve all valid 4-digit crop IDs (e.g., `"0023"`), common names, and scientific names available for that specific country.
+
+### C. Get Agro-Ecological Zones / Regions (Lookup)
+- **Endpoint:** `GET /countries/{id_country}/aez`
+- **Path Params:** `id_country` (required, string)
+- **Query Params:** `lang` (optional, string)
+- **Purpose:** Retrieve all sub-national regions and Agro-Ecological Zone (`aez`) IDs for filtering.
+
+### D. Get Full Crop Calendar Data (Primary Data)
+- **Endpoint:** `GET /countries/{id_country}/cropCalendar`
+- **Path Params:** `id_country` (required, string)
+- **Query Params:**
+  - `crops` (optional/recommended, string: comma-separated 4-digit crop IDs, e.g., `"0023"` or `"0023,0045"`)
+  - `aez` (optional, string: comma-separated AEZ/region IDs)
+  - `lang` (optional, string: `"en"`)
+- **Purpose:** Fetch the complete crop calendar dataset. Extract and return all available fields from the JSON response, including:
+  - Crop details (name, scientific name, variety)
+  - Location/Zone details (region, AEZ name)
+  - Planting/Sowing windows (early, peak, and late start/end dates or dekads)
+  - Harvesting windows (early, peak, and late start/end dates or dekads)
+  - Agronomic parameters (seed rate/density, growing period length in days, water regime/irrigation type, and general comments/notes)
+
+### E. Export Calendar as Excel (Optional Utility)
+- **Endpoint:** `GET /countries/{id_country}/cropCalendar/download`
+- **Path Params:** `id_country` (required, string)
+- **Query Params:** `crops` (optional, string), `aez` (optional, string), `lang` (optional, string)
+- **Purpose:** Stream and save the binary `.xlsx` file response if raw spreadsheet export is requested.
+
+## 3. Implementation Requirements
+1. **Dynamic Resolution:** Allow users to search by either raw IDs (`id_country="CV"`, `crops="0023"`) OR human-readable names (e.g., `"Cabo Verde"`, `"Maize"`). If names are provided, resolve them first using Endpoints A and B before calling Endpoint D.
+2. **Fetch All Data When Unfiltered:** If `crops` or `aez` are omitted in Endpoint D, fetch and return all available crop calendars for the specified country.
+3. **Resilience & Error Handling:**
+   - Implement HTTP retry logic with exponential backoff for `429` or `5xx` responses.
+   - Handle `404` or empty array responses gracefully when a country has no data for a requested crop.
+   - Verify exact JSON key names dynamically or inspect the payload structure on the first call, as field names may vary slightly by country record.
+4. **Output Formatting:** Provide clean functions that return both the raw JSON payload and a normalized summary dictionary containing planting dates, harvest dates, seed rates, and growing cycle durations.
 
 
 ## Behaviour
@@ -109,6 +166,187 @@ data shape
 -Is somethig has been asked for if you dont find a way to do this you should not assume rather represent in structured way 1)what is missing 2) what this mean for us 3) your propese solutions 4)trade-offs
 -when you are in plan mode-You dont dump every plan in one response. Bring it chunk by chunk.You dont decide everything of your own, show me options.explain trade offs and i will decide.
 -talk precisely and in short unless asked to elaborate.
+5)Use simple easy to understand wordings, be precise unless told otherwise.
+6) don overcomplicate things. keep thing simple. do what it asked only unless you thing there is something important to add. then bring it on and explain easily.
+7) in each file at the top write sequentially on what this file does.
+
+
+## codebase summary
+
+*** Do not waste token by reading all the files. Strictly follow this snippet ***
+Agent Context: cropseq codebase
+0. What this project is
+cropseq is a backend-only Python system that recommends a crop rotation for a farm. It is a pipeline of 8 stages (s1..s8). Stages 3–6 and 8 are stubs that return saved JSON fixtures. Stage 2 calls real external APIs. There is no frontend. There is no real agronomic logic yet.
+Working directory: D:\Josh\Nasa app. Package manager: uv. Python >=3.14. Layout: src/cropseq.
+Commands (run from project root, PowerShell):
+uv sync                        # install deps + lock
+uv run pytest -q --ignore=tests/live   # offline tests (use this for checks)
+uv run pytest tests/live -s -q # live API tests, prints shapes
+uv run ruff check .            # lint
+uv run ruff format .           # format
+uv run python tests/stage_range.py s3 s6   # run a stage range
+uv run uvicorn cropseq.api.main:app        # start API
+1. Hard rules (from AGENTS.md)
+1. Each stage exposes exactly one public function: run(input) -> output in stages/sN_name/service.py.
+2. A stage may import only from cropseq.contracts and its own folder. Never from another stage. tests/stages/test_rule2_imports.py enforces this.
+3. Only pipeline.py wires stages together.
+4. contracts/ holds all shared Pydantic v2 models.
+5. API layer is thin: routes call pipeline.run only.
+6. Every stage has a fixture JSON in data/data_shape/.
+7. At the top of every file, write a sequential explanation of what that file does (numbered steps).
+8. Keep code simple and small. Answers short and precise.
+9. Never run LLM calls yourself.
+2. Folder layout (actual, not planned)
+AGENTS.md                     # project instructions, edit this when decisions change
+resources.md                  # what each external source gives us (Open-Meteo documented)
+pyproject.toml                # deps, ruff config
+.env.example                  # env var names
+data/
+  cache.sqlite                # S2 response cache
+  data_shape/                 # ALL fixtures: s1_input.json, s1_output.json, s2_output.json ... s8_output.json
+src/cropseq/
+  __init__.py
+  config.py                   # pydantic-settings Config, global `config` instance
+  errors.py                   # CropseqError hierarchy with http_status
+  pipeline.py                 # run(profile) -> FinalResponse
+  contracts/                  # common, farmer, environment, crops, sequences, evaluation, explanation
+  stages/
+    s1_intake/service.py
+    s2_environment/{__init__,ports,service,adapters/{http,soilgrids,open_meteo},cache/{sqlite}}
+    s3_normalization/service.py
+    s4_filtering/{service,fixture.py,ports.py,adapters/fake.py}
+    s5_sequences/service.py
+    s6_optimization/service.py
+    s7_explanation/{service,fixture.py,ports.py,adapters/fake.py}
+    s8_audit/service.py
+  api/{main.py, routes.py}
+tests/
+  conftest.py
+  test_config.py
+  contracts/test_fixtures.py
+  stages/{test_rule2_imports, test_s2_adapters, test_s2_cache, test_s2_service}
+  e2e/test_pipeline.py
+  live/test_external_apis.py   # calls real APIs, prints shapes
+  stage_range.py               # run_range(start, end) + CLI
+No cli.py exists yet. There is no deps.py. No data/crops/crops.json — S4 loads crops from its own fixture.
+3. Contracts (shared Pydantic models)
+Import style: from cropseq.contracts import FarmerProfile, Environment, ...
+contracts/common.py:
+- Season(name: str, start_month: int 1-12, end_month: int 1-12) — data, never hardcode months.
+- StageOutput(BaseModel) — base for all stage outputs: warnings: list[str] = [], source: str = "".
+- EvidenceReference(source_id: str, title: str, url: str|None, claim: str = "").
+contracts/farmer.py:
+- Location(latitude: float -90..90, longitude: float -180..180).
+- FarmerProfile(farm_id: str, location: Location, area_ha: float >0, budget_usd: float >=0, irrigation_quota_m3: float >=0, priorities: dict[str,float] = {}, soil_overrides: dict[str,float] = {}, attributes: dict[str,float|str] = {}).
+- priorities keys must match config.objectives.
+contracts/environment.py:
+- RawEnvironment(StageOutput): soil_raw: dict, weather_raw: dict, fetched_at: str — untouched API payloads.
+- SoilProfile(ph: float, organic_carbon_g_kg: float|None, texture: str|None, is_field_tested: bool, attributes: dict).
+- SeasonClimate(season: str, mean_temp_c: float, precipitation_mm: float, et0_mm: float, attributes: dict).
+- Environment(StageOutput): soil: SoilProfile, seasons: list[SeasonClimate].
+contracts/crops.py:
+- Crop(crop_id: str, name: str, family: str, attributes: dict[str, float|str|list[int]]) — only those 3 fields fixed; everything else lives in attributes.
+- FeasibleCrops(StageOutput): by_season: dict[str, list[Crop]] keyed by Season.name.
+contracts/sequences.py:
+- CandidateSequence(sequence_id: str, crop_ids: list[str]) — one crop per season, length = config.horizon.
+- SequencePool(StageOutput): sequences: list[CandidateSequence].
+contracts/evaluation.py:
+- EvaluatedSequence(sequence_id: str, crop_ids: list[str], metrics: dict[str,float], is_pareto_optimal: bool, notes: dict[str,str]).
+- metrics keys must equal config.objectives (pipeline checks this; Pydantic can't).
+- EvaluatedSequences(StageOutput): sequences: list[EvaluatedSequence].
+contracts/explanation.py:
+- Explanation(StageOutput): summary: str, sections: dict[str,str], evidence: list[EvidenceReference], generated_by: str ("template" or "llm").
+- FinalResponse(StageOutput): farmer: FarmerProfile, environment: Environment, evaluated: EvaluatedSequences, explanation: Explanation — the API's response body.
+4. config.py
+Config(BaseSettings) with env-file support. Global instance config.
+Fields:
+- horizon: int = 3
+- seasons: list[Season] (3 default seasons: 1–4, 5–8, 9–12)
+- objectives: list[str] = ["gross_margin", "water_m3", "soil_score"]
+- adapter_soil = "soilgrids" (alias ADAPTER_SOIL)
+- adapter_weather = "openmeteo" (alias ADAPTER_WEATHER)
+- adapter_crops = "fake", adapter_explainer = "fake"
+- adapters: dict[str, str] — filled by _sync_adapters as {"soil": ..., "weather": ..., "crops": ..., "explainer": ...}
+- llm_enabled: bool = False, llm_model: str = "gpt-4o-mini"
+- cache_db: str = "data/cache.sqlite"
+There is no ENV_PROVIDER and no fake adapter for soil/weather anymore.
+5. errors.py
+CropseqError(Exception)      http_status = 500, .message
+├─ InvalidInput              422
+├─ UpstreamUnavailable       504
+└─ NoFeasibleSequences       400
+6. The 8 stages
+Each has run(); when an input is None it loads its default fixture, so stages run standalone. When the pipeline calls them, real inputs are passed.
+stage	signature	behavior today
+s1_intake	run(profile: FarmerProfile | None) -> FarmerProfile	validates request. Default input s1_input.json; returns s1_output.json (ignores passed profile — stub).
+s2_environment	run(location: Location | None) -> RawEnvironment	real. Calls SoilGrids + Open-Meteo with cache. Default location from s1_output.json.
+s3_normalization	run(profile: FarmerProfile | None, raw: RawEnvironment | None) -> Environment	default inputs s1_output.json + s2_output.json; returns s3_output.json. TODO: convert SoilGrids pH×10 etc. using profile.soil_overrides.
+s4_filtering	run(environment: Environment | None) -> FeasibleCrops	default input s3_output.json. Uses FakeCropCatalog (from its own fixture), filters by attributes["suitable_seasons"], attaches warnings/source from fixture.
+s5_sequences	run(feasible: FeasibleCrops | None) -> SequencePool	default input s4_output.json; returns s5_output.json.
+s6_optimization	run(pool: SequencePool | None, environment: Environment | None, profile: FarmerProfile | None) -> EvaluatedSequences	defaults s5_output + s3_output + s1_output; returns s6_output.json.
+s7_explanation	run(evaluated: EvaluatedSequences | None) -> Explanation	default input s6_output.json; delegates to the configured explainer (fake → returns s7_output.json).
+s8_audit	run(explanation: Explanation | None, evaluated: EvaluatedSequences | None) -> FinalResponse	defaults s7_output + s6_output; returns s8_output.json.
+s2 in detail (the only real one)
+service.py:
+- run(location) → builds service → _run_coroutine(service.fetch(...)) → RawEnvironment.
+- build_environment_service(soil_name=None, weather_name=None, cache_path=None) -> EnvironmentService — reads config.adapters, instantiates adapters + SQLiteCache.
+- _build_soil_provider(name) — only "soilgrids"; anything else raises NotImplementedError.
+- _build_weather_provider(name) — accepts "openmeteo" or "open_meteo".
+- _get_planning_date_range(reference_year=2025) -> tuple[date, date] — derives 2025-01-01 .. 2025-12-31 from config.seasons, handles year-wrapping seasons.
+- _run_coroutine[T](coro) — runs async from sync code (thread fallback if a loop is running).
+- EnvironmentService(soil_provider, weather_provider, cache):
+- async fetch(latitude, longitude, start_date, end_date) -> RawEnvironment
+- Steps: build cache keys → cache lookup → parallel fetch of missing ones (asyncio.gather(return_exceptions=True)) → raise on exception (no fallback) → cache.set new payloads → return RawEnvironment with source="soil:... (api|cache), weather:...".
+ports.py (Protocols): SoilDataPort(name property, async fetch(lat, lon) -> dict), WeatherDataPort(name, async fetch(lat, lon, start_date, end_date) -> dict), CachePort(get, set). Aliases SoilProvider/WeatherProvider exist.
+adapters/http.py — HttpClient(timeout=15.0, max_attempts=3), async get_json(url, params, headers) -> dict. Retries only timeouts/network errors/429/5xx with exponential backoff.
+adapters/soilgrids.py — SoilGridsAdapter(http_client=None), name = "soilgrids", BASE_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query", PROPERTIES = (phh2o, clay, sand, silt, soc, nitrogen), DEPTHS = 6 ranges. fetch returns raw GeoJSON with properties.layers[i].depths[j].values.mean and unit_measure.d_factor (pH comes back ×10). No unit conversion here.
+adapters/open_meteo.py — OpenMeteoAdapter, name = "open_meteo", BASE_URL = "https://archive-api.open-meteo.com/v1/archive", daily variables = temperature_2m_mean, precipitation_sum, et0_fao_evapotranspiration. Params include timezone=auto, temperature_unit=celsius, precipitation_unit=mm.
+cache/sqlite.py — make_cache_key(provider, request) -> sha256 hex; SQLiteCache(database_path) with get(key) -> dict|None, set(key, provider, request, response), close(); table environment_cache.
+7. pipeline.py
+- run(profile: FarmerProfile) -> FinalResponse — calls s1→s8 in order, passing each output forward (s2.run(farmer.location), s6.run(pool, environment, profile)...).
+- _check_metric_keys(evaluated) — asserts each sequence's metrics keys equal set(config.objectives), else raises CropseqError.
+8. API layer
+api/main.py:
+- create_app() -> FastAPI — title "cropseq", includes router, registers a CropseqError handler returning JSONResponse(status_code=exc.http_status, content={"detail": exc.message}).
+- module-level app = create_app(). Run: uv run uvicorn cropseq.api.main:app.
+api/routes.py:
+- router = APIRouter()
+- GET /health → {"status": "ok"}
+- POST /api/v1/recommendations/optimize — body FarmerProfile, response_model=FinalResponse, calls pipeline.run(profile). FastAPI validates the body automatically (422 on bad body).
+No debug stage endpoint. /docs works by default.
+9. Fixtures (data/data_shape/)
+README.md documents the chain: sN_output.json is produced by stage N and is the input of the next stage. Files: s1_input.json, s1_output.json (FarmerProfile, farm-001, lat 23.8103 lon 90.4125, 12.5 ha, $8000 budget, 45000 m³ water, priorities {gross_margin 0.5, water_m3 0.3, soil_score 0.2}, soil_overrides {ph 6.4}), s2_output.json (RawEnvironment with full SoilGrids GeoJSON + Open-Meteo daily), s3..s8_output.json.
+Fixtures are hand-maintained, never written by code. They are validated by tests/contracts/test_fixtures.py against the output contract. If you add a required field to a contract, that fixture must be edited by hand.
+10. Tests
+- conftest.py — autouse fixture points config.cache_db to a temp file. (No fake adapters are set anymore.)
+- test_config.py — defaults + env override.
+- contracts/test_fixtures.py — every sN_output.json validates against its model.
+- stages/test_rule2_imports.py — AST check that no stage imports another stage.
+- stages/test_s2_adapters.py — SoilGrids/Open-Meteo adapter query structure with AsyncMock(spec=HttpClient); HttpClient retry test with httpx mocked.
+- stages/test_s2_service.py — cache hit/miss with AsyncMock providers; _get_planning_date_range (both standard and wrapping seasons); test_s2_run_entrypoint runs the real S2 entrypoint (needs network).
+- e2e/test_pipeline.py — full pipeline.run end-to-end (needs network).
+- live/test_external_apis.py — test_soilgrids_raw() and test_open_meteo_raw(); print payload shape; no skip gate, so they always run with pytest. Currently SoilGrids returns 503 (ISRIC outage) → this test fails.
+- stage_range.py — run_range(start: str, end: str) -> dict[str, Any] runs stages in order from start to end, carrying outputs in a dict, missing inputs fall back to fixtures, prints name -> Type. CLI: uv run python tests/stage_range.py s3 s6. pipeline.py is not touched by this.
+Use --ignore=tests/live when you want a fully offline test run.
+11. External sources (resources.md)
+resources.md exists in the root. It documents sources in numbered form: 1) request we send, 2) response we get, 3) what it gives us. Open-Meteo is documented. SoilGrids is not yet (API was down).
+Open-Meteo gives exactly 3 daily series: temperature_2m_mean (°C), precipitation_sum (mm), et0_fao_evapotranspiration (mm, FAO-56 reference ET). The API supports more (humidity, wind, radiation, soil moisture/temperature) if we add variables to DAILY_VARIABLES.
+SoilGrids returns raw GeoJSON; pH comes back ×10 (d_factor: 10), SOC ×10, nitrogen ×100. Conversion belongs to S3.
+12. Known gaps / current state
+- S1, S3, S5, S6, S8 return fixtures and ignore inputs (stubs with TODOs).
+- S4 and S7 use in-stage fake adapters (adapters/fake.py in those folders). S2 has no fake.
+- SoilGrids is currently 503 → any run including s2 fails with httpx.HTTPStatusError → API returns 500 (not 504, because it isn't a CropseqError).
+- cli.py, data/crops/crops.json, real template.py/llm.py explainer adapters do not exist.
+- No dependencies have been added for persistence beyond stdlib sqlite3.
+13. How to work here
+1. Read the target file and the contracts it uses.
+2. Keep run() as the only public function of a stage.
+3. Respect rule 2 (no cross-stage imports).
+4. Write a numbered "what this file does" docstring at the top of every file you touch.
+5. Keep it simple; prefer small diffs.
+6. Verify: uv run ruff check . + uv run ruff format . + uv run pytest -q --ignore=tests/live.
+7. Ask instead of assuming when something is ambiguous.
+
 
 
 

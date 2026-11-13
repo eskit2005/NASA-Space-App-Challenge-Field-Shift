@@ -1,12 +1,20 @@
-"""SQLite-backed raw response cache for S2."""
+"""S2 cache: stores raw API responses in SQLite.
+
+1. `make_cache_key()` builds a stable key from provider name + request.
+2. `SQLiteCache` opens the database and creates the table if needed.
+3. `get(key)` returns a saved response, or None if missing.
+4. `set(...)` saves a response, replacing the old one for the same key.
+
+The cache is only an optimisation. S2 still works with an empty cache.
+"""
 
 from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 
@@ -31,6 +39,7 @@ class SQLiteCache:
         self._create_table()
 
     def _create_table(self) -> None:
+        """Create the cache table on first use."""
         self.connection.execute(
             """
             CREATE TABLE IF NOT EXISTS environment_cache (
@@ -45,6 +54,7 @@ class SQLiteCache:
         self.connection.commit()
 
     def get(self, key: str) -> dict[str, Any] | None:
+        """Return the saved response for `key`, or None if there is none."""
         cursor = self.connection.execute(
             """
             SELECT response_json FROM environment_cache WHERE cache_key = ?
@@ -63,6 +73,7 @@ class SQLiteCache:
         request: dict[str, Any],
         response: dict[str, Any],
     ) -> None:
+        """Save a response under `key`, replacing any old value."""
         self.connection.execute(
             """
             INSERT OR REPLACE INTO environment_cache (
@@ -78,10 +89,11 @@ class SQLiteCache:
                 provider,
                 json.dumps(request, sort_keys=True),
                 json.dumps(response),
-                datetime.now(timezone.utc).isoformat(),
+                datetime.now(UTC).isoformat(),
             ),
         )
         self.connection.commit()
 
     def close(self) -> None:
+        """Close the database connection."""
         self.connection.close()

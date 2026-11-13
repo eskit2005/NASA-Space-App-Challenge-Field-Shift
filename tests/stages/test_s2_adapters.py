@@ -1,11 +1,11 @@
-"""Unit tests for S2 adapters (SoilGrids, Open-Meteo, Fake, HttpClient)."""
+"""Unit tests for S2 adapters (SoilGrids, Open-Meteo, HttpClient)."""
 
 from datetime import date
 from unittest.mock import AsyncMock, patch
+
 import httpx
 import pytest
 
-from cropseq.stages.s2_environment.adapters.fake import FakeSoilProvider, FakeWeatherProvider
 from cropseq.stages.s2_environment.adapters.http import HttpClient
 from cropseq.stages.s2_environment.adapters.open_meteo import OpenMeteoAdapter
 from cropseq.stages.s2_environment.adapters.soilgrids import SoilGridsAdapter
@@ -14,26 +14,32 @@ from cropseq.stages.s2_environment.adapters.soilgrids import SoilGridsAdapter
 @pytest.mark.anyio
 async def test_soilgrids_adapter_query_structure() -> None:
     mock_http = AsyncMock(spec=HttpClient)
-    mock_http.get_json.return_value = {"properties": {"layers": []}}
+    mock_http.get_json.return_value = {"properties": {"layers": [{"name": "clay"}]}}
 
     adapter = SoilGridsAdapter(http_client=mock_http)
     assert adapter.name == "soilgrids"
 
     res = await adapter.fetch(latitude=36.7378, longitude=-119.7871)
-    assert res == {"properties": {"layers": []}}
 
-    mock_http.get_json.assert_called_once()
-    call_args = mock_http.get_json.call_args
-    assert call_args[0][0] == SoilGridsAdapter.BASE_URL
-    params = call_args[1]["params"]
+    # Property groups are merged into one payload.
+    assert len(res["properties"]["layers"]) == len(adapter.PROPERTY_GROUPS)
+    assert res["errors"] == []
+    assert mock_http.get_json.call_count == len(adapter.PROPERTY_GROUPS)
 
-    # Verify query parameters contain lat, lon, properties and depths
-    param_dict = dict(params)
-    assert ("lat", "36.7378") in params
-    assert ("lon", "-119.7871") in params
-    assert ("property", "phh2o") in params
-    assert ("depth", "0-5cm") in params
-    assert ("value", "mean") in params
+    # Each call asks for lat, lon, all depths, mean, and one property group.
+    for call, group in zip(
+        mock_http.get_json.call_args_list,
+        adapter.PROPERTY_GROUPS,
+        strict=True,
+    ):
+        assert call.args[0] == SoilGridsAdapter.BASE_URL
+        params = call.kwargs["params"]
+        assert ("lat", "36.7378") in params
+        assert ("lon", "-119.7871") in params
+        assert ("depth", "0-5cm") in params
+        assert ("value", "mean") in params
+        for name in group:
+            assert ("property", name) in params
 
 
 @pytest.mark.anyio
@@ -67,32 +73,18 @@ async def test_open_meteo_adapter_query_structure() -> None:
 
 
 @pytest.mark.anyio
-async def test_fake_adapters() -> None:
-    soil = FakeSoilProvider()
-    weather = FakeWeatherProvider()
-    assert soil.name == "fake_soil"
-    assert weather.name == "fake_weather"
-
-    soil_data = await soil.fetch(latitude=10.0, longitude=20.0)
-    assert "properties" in soil_data
-    assert "layers" in soil_data["properties"]
-
-    weather_data = await weather.fetch(
-        latitude=10.0,
-        longitude=20.0,
-        start_date=date(2025, 1, 1),
-        end_date=date(2025, 1, 2),
-    )
-    assert "daily" in weather_data
-
-
-@pytest.mark.anyio
 async def test_http_client_retry_and_success() -> None:
     client = HttpClient(timeout=2.0, max_attempts=3)
 
     call_count = 0
-    fake_response = httpx.Response(200, json={"result": "ok"}, request=httpx.Request("GET", "http://test"))
-    error_503 = httpx.HTTPStatusError("Service Unavailable", request=httpx.Request("GET", "http://test"), response=httpx.Response(503))
+    fake_response = httpx.Response(
+        200, json={"result": "ok"}, request=httpx.Request("GET", "http://test")
+    )
+    error_503 = httpx.HTTPStatusError(
+        "Service Unavailable",
+        request=httpx.Request("GET", "http://test"),
+        response=httpx.Response(503),
+    )
 
     async def mock_get(*args, **kwargs):
         nonlocal call_count

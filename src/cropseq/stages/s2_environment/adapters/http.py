@@ -1,4 +1,11 @@
-"""HTTP client abstraction for external environmental API adapters."""
+"""Shared HTTP client for the S2 adapters.
+
+1. `get_json()` sends a GET request and returns JSON.
+2. Each request has a 15 second timeout.
+3. Failed requests are retried up to 3 times.
+4. Only temporary failures are retried: timeouts, network errors, 429 and 5xx.
+5. Other errors (e.g. 400) are raised immediately.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +21,9 @@ from tenacity import (
 
 
 def _is_retryable_error(exc: BaseException) -> bool:
-    if isinstance(exc, (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)):
+    if isinstance(
+        exc, (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)
+    ):
         return True
     if isinstance(exc, httpx.HTTPStatusError):
         # Retry on rate limit (429) or transient server errors (5xx)

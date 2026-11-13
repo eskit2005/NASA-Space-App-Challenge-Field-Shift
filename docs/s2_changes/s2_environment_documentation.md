@@ -28,11 +28,11 @@ In strict compliance with the **cropseq** modular monolith architecture:
 - **Output Contract**: [`RawEnvironment`](file:///e:/Project_Files/Farmer-decision-support-tool/src/cropseq/contracts/environment.py#L10) (inherits from [`StageOutput`](file:///e:/Project_Files/Farmer-decision-support-tool/src/cropseq/contracts/common.py#L22))
   ```python
   class RawEnvironment(StageOutput):
-      soil_raw: dict = {}      # Untransformed SoilGrids GeoJSON payload
-      weather_raw: dict = {}   # Untransformed Open-Meteo daily JSON payload
-      fetched_at: str = ""     # ISO 8601 UTC timestamp
-      warnings: list[str] = [] # Captured provider warnings and fallback notifications
-      source: str = ""         # Data provenance trace (e.g. 'soil:soilgrids (api), weather:open_meteo (cache)')
+      soil_raw: dict = {}  # Untransformed SoilGrids GeoJSON payload
+      weather_raw: dict = {}  # Untransformed Open-Meteo daily JSON payload
+      fetched_at: str = ""  # ISO 8601 UTC timestamp
+      warnings: list[str] = []  # Captured provider warnings and fallback notifications
+      source: str = ""  # Data provenance trace (e.g. 'soil:soilgrids (api), weather:open_meteo (cache)')
   ```
 
 ---

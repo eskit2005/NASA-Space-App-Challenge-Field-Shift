@@ -9,7 +9,11 @@ STAGES_DIR = Path(__file__).resolve().parents[2] / "src" / "cropseq" / "stages"
 
 
 def test_rule2_no_cross_stage_imports() -> None:
-    stage_names = {p.name for p in STAGES_DIR.iterdir() if p.is_dir() and not p.name.startswith("__")}
+    stage_names = {
+        p.name
+        for p in STAGES_DIR.iterdir()
+        if p.is_dir() and not p.name.startswith("__")
+    }
 
     for stage_name in stage_names:
         stage_path = STAGES_DIR / stage_name
