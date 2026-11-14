@@ -4,52 +4,55 @@ Farmer-facing decision support UI for the **FieldShift Crop Rotation Advisor**. 
 
 ---
 
-## ⚡ Quick Usage (Testing Before Cloud Backend Deployment)
+## ⚡ Quick Usage: Running with the Local Backend
 
-> **The backend is not hosted on the cloud yet.**  
-> The web application is engineered with **two operational modes** so that evaluators and farmers can explore the entire recommendation flow immediately.
+Follow these steps to run the live Python pipeline backend locally and connect it to the frontend UI.
 
-### Mode 1: Instant Cloud / Vercel Demo (Mock Mode)
-The deployed frontend runs with built-in realistic mock data grounded in real NASA & BARC agronomic output (`s8_output.json`).
-* **Zero Backend Required:** Works 100% offline and in the browser.
-* **Full Experience:** Explore the conversational AI intake, Upazila geo-location selection, budget & water quota inputs, seasonal planting journeys, visual profit/water/soil gauges, and weather summaries.
-* **Header Status:** In the top bar, you can see `🧪 Mock Mode` with an instant toggle switch.
+### Step 1: Start the Local Backend (FastAPI)
 
-### Mode 2: Connect to a Local Live Backend (Full Live Pipeline)
-If you want to run the live Python pipeline (fetching real-time SoilGrids soil data and Open-Meteo weather):
+From the repository root directory:
 
-1. **Start the Backend API (FastAPI):**
-   ```bash
-   # From the repository root
-   PYTHONPATH=src uvicorn cropseq.api.main:app --host 127.0.0.1 --port 8000 --reload
-   ```
+```bash
+# 1. Install dependencies (if not already installed)
+pip install -r requirement.txt
 
-2. **Run the Frontend:**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   # Opens at http://localhost:3000
-   ```
+# 2. Launch the backend server with hot-reload
+PYTHONPATH=src uvicorn cropseq.api.main:app --host 127.0.0.1 --port 8000 --reload
+```
 
-3. **Toggle Live Backend:**
-   * In the top-right header, click **`(Switch)`** next to the backend badge to toggle between **Live Backend** and **Mock Mode** in real time!
-   * Or set `VITE_MOCK_API=false` in `frontend/.env.local`.
+* **Health Check:** Open `http://127.0.0.1:8000/api/v1/health` → returns `{"status":"ok"}`
+* **Interactive API Docs:** Open `http://127.0.0.1:8000/docs`
 
 ---
 
-## 🚀 Future Cloud Backend Deployment (Connecting Vercel to Live Backend)
+### Step 2: Start the Frontend UI
 
-When you deploy the FastAPI backend to a cloud host (Render, Railway, Fly.io, etc.):
+In a new terminal window:
 
-1. **Backend Environment Variable:**
-   ```bash
-   CORS_ORIGINS=https://your-frontend.vercel.app,http://localhost:3000
-   ```
+```bash
+# 1. Navigate to frontend directory
+cd frontend
 
-2. **Vercel Frontend Environment Variables:**
-   * `VITE_API_BASE_URL`: `https://your-deployed-backend.onrender.com`
-   * `VITE_MOCK_API`: `false`
+# 2. Install dependencies
+npm install
+
+# 3. Launch the development server
+npm run dev
+```
+
+* **Frontend URL:** Open `http://localhost:3000` in your browser.
+
+---
+
+### Step 3: Verify the Connection
+
+* When the frontend loads, look at the top-right header:
+  * **🟢 Backend Online:** The frontend is connected live to your local FastAPI backend at `http://127.0.0.1:8000`. All farmer conversations, SoilGrids satellite queries, and multi-objective sequence optimizations are running in real time through the local Python pipeline.
+  * **🧪 Mock Mode (Fallback):** If the local backend is stopped, the frontend automatically falls back to built-in NASA & BARC mock data (`data_shape/s8_output.json`) so the UI never crashes and remains 100% testable.
+  * **Switch Toggle:** Click **`(Switch)`** in the top header anytime to manually toggle between **Live Backend** and **Mock Mode**.
+
+> [!NOTE]
+> If testing the frontend hosted on Vercel (`https://...`): Modern browsers block HTTPS web pages from making insecure requests to `http://localhost` (Mixed Content policy). For local backend development and testing, always use `npm run dev` locally at `http://localhost:3000`.
 
 ---
 
