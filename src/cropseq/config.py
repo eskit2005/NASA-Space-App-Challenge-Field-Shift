@@ -105,7 +105,7 @@ class Config(BaseSettings):
     # --- API ---
     # Comma-separated browser origins allowed to call the API.
     cors_origins: str = Field(
-        default="http://localhost:3000,http://127.0.0.1:3000",
+        default="http://localhost:3000,http://127.0.0.1:3000,*",
         alias="CORS_ORIGINS",
     )
     # When set, every POST endpoint requires `X-API-Key`. Empty = no auth (local dev).
