@@ -5,6 +5,48 @@ A decision-support tool that helps farmers explore crop rotation strategies to i
 
 **NASA Space Apps Challenge 2026 · Bangladesh · Team [Zerox]**
 
+---
+
+## ⚡ Quick Usage (Testing Before Cloud Backend Deployment)
+
+> **Note on Deployment:** The frontend web application is hosted on Vercel. Since the backend is not hosted on the cloud yet, the app comes with built-in **dual operational modes** so anyone can test and evaluate the entire recommendation flow immediately.
+
+### Mode 1: Instant Demo on Vercel (Mock Mode)
+The deployed frontend runs with built-in realistic agronomic mock data (`data/data_shape/s8_output.json`).
+* **Zero Backend Required:** 100% functional in any browser.
+* **Full Experience:** Test the conversational AI intake, Upazila search, constraints/priority adjustments, seasonal crop journey cards, visual profit/water/soil gauges, and weather summaries.
+* **Header Status:** In the top bar, you can see `🧪 Mock Mode` with an instant toggle switch.
+
+### Mode 2: Connect to a Local Live Backend (Full Live Pipeline)
+If you want to run the live Python pipeline (fetching real-time SoilGrids soil data and Open-Meteo weather):
+
+1. **Start the Backend (FastAPI):**
+   ```bash
+   PYTHONPATH=src uvicorn cropseq.api.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+
+2. **Start the Frontend (React / Vite):**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   # Opens at http://localhost:3000
+   ```
+
+3. **Toggle Live Backend:**
+   * In the top-right header, click **`(Switch)`** next to the backend badge to toggle between **Live Backend** and **Mock Mode** in real time!
+   * Or set `VITE_MOCK_API=false` in `frontend/.env.local`.
+
+---
+
+## 🚀 Future Cloud Backend Deployment (Connecting Vercel to Live Backend)
+
+When you deploy the FastAPI backend to a cloud host (Render, Railway, Fly.io, etc.):
+1. **Backend Environment Variable:** Set `CORS_ORIGINS=https://your-frontend.vercel.app,http://localhost:3000`
+2. **Vercel Frontend Environment Variables:** Set `VITE_API_BASE_URL=https://your-deployed-backend.onrender.com` and `VITE_MOCK_API=false`
+
+---
+
 ## The Problem
 Farmers face shifting temperatures, unpredictable rainfall, water shortages, extreme weather, and declining soil health. These pressures make it hard to choose crop rotations that protect fields and stay resilient over the long term.
 
