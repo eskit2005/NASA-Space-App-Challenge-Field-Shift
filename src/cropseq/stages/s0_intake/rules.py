@@ -21,12 +21,24 @@ NUMBER = r"(\d[\d,]*(?:\.\d+)?)"
 
 LAND_PHRASES: tuple[tuple[str, str], ...] = (
     ("very low land", "VLL"),
+    ("very lowland", "VLL"),
+    ("very low", "VLL"),
     ("medium low land", "MLL"),
+    ("medium lowland", "MLL"),
     ("medium-low land", "MLL"),
+    ("medium-lowland", "MLL"),
+    ("medium-low", "MLL"),
+    ("medium low", "MLL"),
     ("medium high land", "MHL"),
+    ("medium highland", "MHL"),
     ("medium-high land", "MHL"),
+    ("medium-highland", "MHL"),
+    ("medium-high", "MHL"),
+    ("medium high", "MHL"),
     ("high land", "HL"),
+    ("highland", "HL"),
     ("low land", "LL"),
+    ("lowland", "LL"),
 )
 
 IRRIGATION_METHODS: tuple[tuple[str, str], ...] = (
@@ -92,20 +104,15 @@ def _coordinates(text: str) -> tuple[float, float] | None:
 
 
 def _land_type(text: str) -> str | None:
-    """Match explicit codes only when the message is about land."""
+    """Match explicit codes or land-type words."""
+    cleaned = text.strip().lower()
     for phrase, mapped in LAND_PHRASES:
-        if phrase in text:
+        if phrase in cleaned:
             return mapped
-    code_after = re.search(
-        r"\b(?:land\s*type|land\s*is|land)\s*(?:is|:|=)?\s*"
-        r"(hl|mhl|mll|ll|vll|ml)\b",
-        text,
-    )
-    if code_after:
-        return code_after.group(1).upper()
-    code_before = re.search(r"\b(hl|mhl|mll|ll|vll|ml)\s+land\b", text)
-    if code_before:
-        return code_before.group(1).upper()
+    # Match standalone or contextual codes e.g. "MHL", "HL", "land type: MHL"
+    match = re.search(r"\b(hl|mhl|mll|ll|vll|ml)\b", cleaned)
+    if match:
+        return match.group(1).upper()
     return None
 
 

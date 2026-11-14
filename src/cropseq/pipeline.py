@@ -4,6 +4,7 @@ run(profile) -> FinalResponse
 """
 
 from .config import config
+from .context import save_pipeline_context
 from .contracts import (
     EvaluatedSequences,
     FarmerProfile,
@@ -50,9 +51,20 @@ def run(profile: FarmerProfile) -> FinalResponse:
     evaluated = s6.run(pool=pool, environment=environment, profile=farmer)
     _check_metric_keys(evaluated)
     explanation = s7.run(evaluated)
-    return s8.run(
+    result = s8.run(
         explanation=explanation,
         evaluated=evaluated,
         profile=farmer,
         environment=environment,
     )
+    save_pipeline_context(
+        farmer=farmer,
+        raw=raw,
+        environment=environment,
+        feasible=feasible,
+        pool=pool,
+        evaluated=evaluated,
+        explanation=explanation,
+        result=result,
+    )
+    return result

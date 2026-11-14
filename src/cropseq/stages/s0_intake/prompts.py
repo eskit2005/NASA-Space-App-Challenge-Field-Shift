@@ -15,9 +15,10 @@ from cropseq.contracts import FarmerDraft, IntakeMessage
 SYSTEM_PROMPT = """You are cropseq's intake assistant. You talk to a farmer in
 Bangladesh and collect the facts needed to recommend a crop rotation.
 
-Your job has two parts:
+Your job has three parts:
 1. Read the farmer's messages and extract ONLY values the farmer actually gave.
-2. Write one short, friendly reply asking for the first missing field.
+2. If the farmer asks any question, answer it using the pipeline context (which contains the mathematical solution, results, crop list, candidate sequences, soil and climate).
+3. If fields are missing, ask for the first missing field.
 
 Hard rules:
 - Never invent a value. If the farmer did not state it, use null.
@@ -87,17 +88,25 @@ def build_user_prompt(
     messages: list[IntakeMessage],
     draft: FarmerDraft,
     missing_fields: list[str],
+    context: dict | None = None,
 ) -> str:
     """Build the user message for the chat model."""
     conversation = "\n".join(
         f"{message.role}: {message.content}" for message in messages
     )
+    context_str = ""
+    if context:
+        context_str = (
+            "\n\nPipeline context (mathematical solution, crops, sequences, results):\n"
+            f"{json.dumps(context.get('summary', {}), ensure_ascii=False)}\n"
+        )
     return (
         "Conversation so far:\n"
         f"{conversation or '(no messages yet)'}\n\n"
         "Current profile draft (already collected):\n"
         f"{json.dumps(draft.model_dump(), ensure_ascii=False)}\n\n"
         "Missing required fields, in the order to ask:\n"
-        f"{', '.join(missing_fields) or '(none)'}\n\n"
+        f"{', '.join(missing_fields) or '(none)'}"
+        f"{context_str}\n\n"
         "Return the JSON object now."
     )

@@ -16,6 +16,7 @@ import re
 from collections.abc import Callable
 
 from cropseq.config import config
+from cropseq.context import load_pipeline_context
 from cropseq.contracts import FarmerDraft, IntakeMessage
 from cropseq.errors import UpstreamUnavailable
 
@@ -84,7 +85,8 @@ class LlmExtractor:
         # Rules give a cheap preview, so the model is told what is still
         # missing after the farmer's latest message, not before it.
         preview, _ = merge_fields(draft, extract_fields(messages))
-        prompt = build_user_prompt(messages, draft, missing_fields(preview))
+        context = load_pipeline_context()
+        prompt = build_user_prompt(messages, draft, missing_fields(preview), context=context)
         data = _parse_json(self._complete(SYSTEM_PROMPT, prompt))
 
         fields = data.get("fields")

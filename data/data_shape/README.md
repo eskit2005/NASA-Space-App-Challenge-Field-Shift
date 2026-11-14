@@ -37,3 +37,28 @@ Every file is validated against its contract in `src/cropseq/contracts/` by
 - `s8_output.json` embeds the farmer / environment / evaluated / explanation
   copied verbatim from `s1_output.json`, `s3_output.json`, `s6_output.json`,
   `s7_output.json`.
+
+## Unified Pipeline Context — `data/pipeline_context.json`
+
+Whatever gets produced in every stage across the entire pipeline is automatically consolidated and persisted into one single file: `data/pipeline_context.json` (configured via `PIPELINE_CONTEXT_FILE` in `config.py`).
+
+### File Structure:
+- `updated_at`: ISO 8601 timestamp of the run.
+- `stages`: Raw payloads from every stage:
+  - `s1_farmer`: `FarmerProfile`
+  - `s2_raw_environment`: `RawEnvironment`
+  - `s3_environment`: `Environment` (SoilGrids, Open-Meteo, land type check)
+  - `s4_feasible_crops`: `FeasibleCrops` (crop list per season)
+  - `s5_sequence_pool`: `SequencePool` (candidate sequences)
+  - `s6_mathematical_solution`: `EvaluatedSequences` (Pareto frontier, scores, metrics)
+  - `s7_explanation`: `Explanation` (agronomic rationale, sections, evidence)
+  - `s8_final_result`: `FinalResponse` (audited recommendation)
+- `summary`: Structured convenience view for Stage 0 agent grounding:
+  - `mathematical_solution`: evaluated sequences count, Pareto-optimal count & list
+  - `crop_list`: feasible crops by season with botanical family
+  - `sequence_pool`: candidate sequence pool
+  - `best_rotation`: recommended sequence with gross margin, water m³, and soil score
+  - `soil_and_climate`: topsoil pH, texture, organic carbon, seasonal weather
+  - `explanation`: summary text, section deep-dives, citations
+
+This file is loaded by Stage 0 (`s0_intake`) to answer farmer questions in real time.

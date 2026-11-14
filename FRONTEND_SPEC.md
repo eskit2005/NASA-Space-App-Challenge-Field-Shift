@@ -42,13 +42,13 @@ The same flow repeats every season.
 
 | # | Flow | Status |
 |---|------|--------|
-| 1 | Guided intake chat → `FarmerProfile` | **endpoint exists**; scripted UI also works |
-| 2 | Submit profile → recommendations | **API exists** |
+| 1 | Guided intake chat + Q&A → `FarmerProfile` | **endpoint exists** (`/api/v1/intake/message`); now answers questions grounded in pipeline context |
+| 2 | Submit profile → recommendations | **API exists** (`/api/v1/recommendations/optimize`) |
 | 3 | Show result + explanation | frontend only, API exists |
-| 4 | Follow-up Q&A about the result | backend endpoint **not built yet** |
-| 5 | "Is this sequence good? Why?" (future module) | backend endpoint **not built yet** |
+| 4 | Follow-up Q&A about the result | **supported via Stage 0** (`/api/v1/intake/message` reads `data/pipeline_context.json`) |
+| 5 | "Is this sequence good? Why?" (future module) | backend endpoint *not built yet* |
 
-Flows 1–3 can be built and demoed now. Flows 4–5 need backend work first.
+Flows 1–4 are fully functional on the backend. Flow 5 is a future module.
 
 ---
 
@@ -216,28 +216,17 @@ Any framework. Static HTML + fetch is enough. No server-side rendering needed. D
 4. **Result** — recommendation, scores, explanation, evidence, warnings.
 5. **Follow-up Q&A** — chat box attached to the result (feature-flagged until the endpoint exists).
 
-### 3.3 The intake chatbot (predefined, not free-form AI)
+### 3.3 Intake Modes (Guided Form Wizard + S0 Conversational AI Chat)
 
-This is a script, not an LLM call. It is a list of questions in order. Each answer maps to a field.
-
-| # | Question (plain words) | Field | Input control |
-|---|---|---|---|
-| 1 | Where is your farm? | `location.latitude`, `location.longitude` | map picker or lat/lon inputs |
-| 2 | How big is your farm, in hectares? | `area_ha` | number |
-| 3 | What is your budget for the season, in USD? | `budget_usd` | number |
-| 4 | How much water can you irrigate with, per season (m³)? | `irrigation_quota_m3` | number |
-| 5 | What matters most to you? | `priorities` | 3 sliders, normalised to 1.0 |
-| 6 | Did you test your soil in a lab? | `soil_overrides` | yes/no + pH field |
-| 7 | Anything else we should know? (district, irrigation method) | `attributes` | two short text inputs |
-
-Rules:
-
-- Rounds 1–5 are required. 6–7 are skippable.
-- Show the summary card before submitting. The farmer must see what will be sent.
-- Generate `farm_id` yourself once per farm, e.g. `farm-` + timestamp or UUID. It is just a label.
-- Keep answers in local state; a refresh mid-chat may lose them (acceptable for v1).
-
-If we later want free-text answers ("I have about 12 hectares") instead of typed inputs, that is a **new backend endpoint** (section 6.3). Do not put an LLM key in the frontend.
+The frontend provides two intake modes:
+1. **Guided Form Wizard** (7 steps): Location, Farm Size & Land Type, Budget, Water Quota, Priorities, Lab Soil Test, Additional Details (Irrigation Method).
+2. **Conversational AI Chat** (Stage 0): Natural conversational intake powered by `/api/v1/intake/message`.
+   - **Core required fields**: Location, Farm Size, Budget, Water Quota, Land Type.
+   - **Contextual Suggestion Chips**: Exactly one row of relevant suggestions is presented matching the active question (Location chips, Size chips, Budget chips, Water chips, Land type chips).
+   - **Soil pH Handling**: Soil pH is specialized lab data and is **never proactively asked** in conversational chat. Farmers who have a lab test can view and edit their lab test pH on the Review Screen or if they mention it, the backend extracts it into `soil_overrides.ph`.
+   - **Optional Irrigation Prompt**: After the 5 core fields are collected, the AI assistant invites the farmer's irrigation method (Tube well, Canal, Pond, Rainfed) as an optional question with quick pills, and permits immediate one-click proceeding with standard defaults.
+   - **Review Screen Inline Editing**: Every field (Farm Size, Land Type, Budget, Water Quota, Soil pH, Irrigation Method) can be edited directly inline on the Review Screen without restarting intake.
+   - **Responsive Design**: Mobile-first layouts (375px+ viewports), 16px input font prevention for iOS zoom, wrap-safe flex rows, and full-width touch-friendly button stacks.
 
 ### 3.4 Result screen — what to show, in what order
 
@@ -347,18 +336,19 @@ Body:  { "messages": [...], "draft": {...}, "farm_id": "farm-001" }
 - When complete, `reply` is the hold-on message and `profile` is final.
 - The scripted version in 3.3 still works; choose one per screen.
 
-### 6.4 Follow-up Q&A endpoint (flow 4)
+### 6.4 Follow-up Q&A capability (flow 4) — **Live via Stage 0**
+
+Follow-up questions are supported directly through `POST /api/v1/intake/message`:
 
 ```
-POST /api/v1/recommendations/ask
-Body:  { "question": "...", "recommendation": <FinalResponse>, "history": [{"role","content"}] }
-→      { "answer": "...", "evidence": [EvidenceReference] }
+POST /api/v1/intake/message
+Body:  { "messages": [{"role": "farmer", "content": "Why this rotation?"}], "draft": <FarmerDraft> }
+→      IntakeReply with "reply": grounded agronomic and mathematical answer
 ```
 
-- Stateless: the `FinalResponse` travels with the request. No database.
-- Answers must be grounded in the sent result; refuse anything else.
-- Needs the explainer port (`s7_explanation/ports.py`) reused, not a new LLM path.
-- **Trade-off:** sending the full result each time is a bigger body but removes all session state and cleanup. Preferred for v1.
+- **Single Pipeline Context Store:** Whatever got produced in every stage across the entire pipeline (`s1_farmer`, `s2_raw_environment`, `s3_environment`, `s4_feasible_crops`, `s5_sequence_pool`, `s6_mathematical_solution`, `s7_explanation`, `s8_final_result`) is automatically saved into one single file: `data/pipeline_context.json`.
+- When a farmer asks any question (e.g., *"Why this rotation?"*, *"What if I have less water?"*, *"Why not rice every season?"*, *"Which crop is riskiest?"*, *"What crops can grow here?"*), Stage 0 loads `data/pipeline_context.json` and returns a grounded answer.
+- If required fields are still missing from `draft`, it answers the question and appends the next intake question. If the draft is complete, it returns the answer directly with `is_complete: true`.
 
 ### 6.5 Reference data endpoints — **done**
 

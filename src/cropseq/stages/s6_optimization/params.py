@@ -61,6 +61,24 @@ def load_catalog(path: Path) -> Catalog:
         normalize_crop_id(name): _params_from(values, defaults)
         for name, values in raw.get("crops", {}).items()
     }
+
+    # Map BARC numeric crop IDs from crop_recommender.db so numeric IDs resolve to named traits
+    try:
+        import sqlite3
+        from cropseq.config import config
+        barc_path = Path(config.barc_db)
+        if not barc_path.is_absolute():
+            barc_path = path.resolve().parents[2] / barc_path
+        if barc_path.exists():
+            with sqlite3.connect(barc_path) as conn:
+                rows = conn.execute("SELECT DISTINCT crop_id, crop_name FROM upazila_suitable_crops").fetchall()
+                for cid, cname in rows:
+                    norm = normalize_crop_id(str(cname))
+                    if norm in crops:
+                        crops[str(cid)] = crops[norm]
+    except Exception:
+        pass
+
     return Catalog(
         defaults=_params_from({}, defaults),
         crops=crops,

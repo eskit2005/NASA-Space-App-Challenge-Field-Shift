@@ -1,0 +1,4046 @@
+{
+  "source": "derived from D:\\Josh\\Nasa app\\data\\bangladesh\\upazila_polygons.json",
+  "count": 505,
+  "places": [
+    {
+      "code": "501006",
+      "upazila": "Adamdighi",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.7945991875,
+      "longitude": 89.06569543500001
+    },
+    {
+      "code": "100602",
+      "upazila": "Agailjhara",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.9754901225,
+      "longitude": 90.1383107265
+    },
+    {
+      "code": "603602",
+      "upazila": "Ajmiriganj",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.5629773535,
+      "longitude": 91.2661225335
+    },
+    {
+      "code": "201202",
+      "upazila": "Akhaura",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 23.849177943,
+      "longitude": 91.18554159499999
+    },
+    {
+      "code": "401807",
+      "upazila": "Alamdanga",
+      "district": "Chuadanga",
+      "division": "Khulna",
+      "latitude": 23.726462251999997,
+      "longitude": 88.894687145
+    },
+    {
+      "code": "302903",
+      "upazila": "Alfadanga",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.297172699500003,
+      "longitude": 89.6747759995
+    },
+    {
+      "code": "200304",
+      "upazila": "Alikadam",
+      "district": "Bandarban",
+      "division": "Chattogram",
+      "latitude": 21.591940671499998,
+      "longitude": 92.3943432225
+    },
+    {
+      "code": "201504",
+      "upazila": "Anowara",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.1845626625,
+      "longitude": 91.8834055875
+    },
+    {
+      "code": "306702",
+      "upazila": "Araihazar",
+      "district": "Naraynganj",
+      "division": "Dhaka",
+      "latitude": 23.7705874645,
+      "longitude": 90.6622230145
+    },
+    {
+      "code": "408704",
+      "upazila": "Assasuni",
+      "district": "Satkhira",
+      "division": "Khulna",
+      "latitude": 22.4984692995,
+      "longitude": 89.1644520005
+    },
+    {
+      "code": "457204",
+      "upazila": "Atpara",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.7956019025,
+      "longitude": 90.875744556
+    },
+    {
+      "code": "506403",
+      "upazila": "Atrai",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.619904586,
+      "longitude": 88.958872886
+    },
+    {
+      "code": "304802",
+      "upazila": "Austagram",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.3229524645,
+      "longitude": 91.12248595700001
+    },
+    {
+      "code": "506406",
+      "upazila": "Badalgachhi",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.96964087,
+      "longitude": 88.9353036265
+    },
+    {
+      "code": "506909",
+      "upazila": "Bagatipara",
+      "district": "Natore",
+      "division": "Rajshahi",
+      "latitude": 24.305180360999998,
+      "longitude": 88.945180612
+    },
+    {
+      "code": "508110",
+      "upazila": "Bagha",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.2178382325,
+      "longitude": 88.82694685850001
+    },
+    {
+      "code": "208407",
+      "upazila": "Baghaichhari",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 23.3716766905,
+      "longitude": 92.233047811
+    },
+    {
+      "code": "304806",
+      "upazila": "Bajitpur",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.227172434,
+      "longitude": 90.9369393585
+    },
+    {
+      "code": "20150616",
+      "upazila": "Chattogram City Corporation",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.3429512075,
+      "longitude": 91.818883446
+    },
+    {
+      "code": "100607",
+      "upazila": "Bakerganj",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.562318502,
+      "longitude": 90.3733775915
+    },
+    {
+      "code": "453907",
+      "upazila": "Bakshiganj",
+      "district": "Jamalpur",
+      "division": "Mymensingh",
+      "latitude": 25.207281108,
+      "longitude": 89.8617477285
+    },
+    {
+      "code": "308207",
+      "upazila": "Baliakandi",
+      "district": "Rajbari",
+      "division": "Dhaka",
+      "latitude": 23.6513460675,
+      "longitude": 89.55256926
+    },
+    {
+      "code": "100610",
+      "upazila": "Banaripara",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.806541444,
+      "longitude": 90.1253085365
+    },
+    {
+      "code": "201204",
+      "upazila": "Banchharampur",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 23.7751982405,
+      "longitude": 90.8063845625
+    },
+    {
+      "code": "306706",
+      "upazila": "Bandar",
+      "district": "Naraynganj",
+      "division": "Dhaka",
+      "latitude": 23.647371655999997,
+      "longitude": 90.549005352
+    },
+    {
+      "code": "603611",
+      "upazila": "Baniachong",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.525704661,
+      "longitude": 91.356074134
+    },
+    {
+      "code": "201508",
+      "upazila": "Banshkhali",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.0171026325,
+      "longitude": 91.9457782245
+    },
+    {
+      "code": "506915",
+      "upazila": "Baraigram",
+      "district": "Natore",
+      "division": "Rajshahi",
+      "latitude": 24.258584599,
+      "longitude": 89.1541599495
+    },
+    {
+      "code": "457209",
+      "upazila": "Barhatta",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.92470428,
+      "longitude": 90.88147065999999
+    },
+    {
+      "code": "208421",
+      "upazila": "Barkal",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.879526227,
+      "longitude": 92.3383091585
+    },
+    {
+      "code": "208429",
+      "upazila": "Belaichhari",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.255048035476502,
+      "longitude": 92.48381160765706
+    },
+    {
+      "code": "508811",
+      "upazila": "Belkuchi",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.29682094,
+      "longitude": 89.70407349
+    },
+    {
+      "code": "304811",
+      "upazila": "Bhairab",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.1078051005,
+      "longitude": 90.9728856445
+    },
+    {
+      "code": "456113",
+      "upazila": "Bhaluka",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.379115851,
+      "longitude": 90.36026885999999
+    },
+    {
+      "code": "302910",
+      "upazila": "Bhanga",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.383353857,
+      "longitude": 90.00892548350001
+    },
+    {
+      "code": "507619",
+      "upazila": "Bhangura",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 24.241996143999998,
+      "longitude": 89.39909463199999
+    },
+    {
+      "code": "308614",
+      "upazila": "Bhedarganj",
+      "district": "Shariatpur",
+      "division": "Dhaka",
+      "latitude": 23.2721490705,
+      "longitude": 90.48991858849999
+    },
+    {
+      "code": "100918",
+      "upazila": "Bhola Sadar",
+      "district": "Bhola",
+      "division": "Barishal",
+      "latitude": 22.7052381835,
+      "longitude": 90.624066182
+    },
+    {
+      "code": "507018",
+      "upazila": "Bholahat",
+      "district": "Chapai Nawabganj",
+      "division": "Rajshahi",
+      "latitude": 24.8852945275,
+      "longitude": 88.200874905
+    },
+    {
+      "code": "552712",
+      "upazila": "Birganj",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.935325147500002,
+      "longitude": 88.61371544049999
+    },
+    {
+      "code": "609018",
+      "upazila": "Bishwambarpur",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 25.102215385500003,
+      "longitude": 91.3107936505
+    },
+    {
+      "code": "50812266",
+      "upazila": "Rajshahi City Corporation",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.383196744,
+      "longitude": 88.606020301
+    },
+    {
+      "code": "552721",
+      "upazila": "Bochaganj",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.7865921665,
+      "longitude": 88.45562260049999
+    },
+    {
+      "code": "557725",
+      "upazila": "Boda",
+      "district": "Panchagarh",
+      "division": "Rangpur",
+      "latitude": 26.2036000695,
+      "longitude": 88.6161559735
+    },
+    {
+      "code": "100921",
+      "upazila": "Borhanuddin",
+      "district": "Bhola",
+      "division": "Barishal",
+      "latitude": 22.478799535999997,
+      "longitude": 90.713493323
+    },
+    {
+      "code": "202216",
+      "upazila": "Chakaria",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.748069853,
+      "longitude": 92.0744573135
+    },
+    {
+      "code": "201322",
+      "upazila": "Chandpur Sadar",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.2316952645,
+      "longitude": 90.674648918
+    },
+    {
+      "code": "100925",
+      "upazila": "Charfasson",
+      "district": "Bhola",
+      "division": "Barishal",
+      "latitude": 22.053414352,
+      "longitude": 90.763600932
+    },
+    {
+      "code": "554908",
+      "upazila": "Char Rajibpur",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.447921776999998,
+      "longitude": 89.76138061099999
+    },
+    {
+      "code": "207510",
+      "upazila": "Chatkhil",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 23.052776498500002,
+      "longitude": 90.96368096500001
+    },
+    {
+      "code": "507622",
+      "upazila": "Chatmohar",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 24.2294000495,
+      "longitude": 89.28949345550001
+    },
+    {
+      "code": "201931",
+      "upazila": "Chauddagram",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.207645949499998,
+      "longitude": 91.2793477165
+    },
+    {
+      "code": "508827",
+      "upazila": "Chauhali",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.149611127,
+      "longitude": 89.74995072249999
+    },
+    {
+      "code": "609023",
+      "upazila": "Chhatak",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 24.979673103499998,
+      "longitude": 91.6090988445
+    },
+    {
+      "code": "554909",
+      "upazila": "Chilmari",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.5549858645,
+      "longitude": 89.7146833085
+    },
+    {
+      "code": "552730",
+      "upazila": "Chirirbandar",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.660866718,
+      "longitude": 88.785950063
+    },
+    {
+      "code": "400114",
+      "upazila": "Chitalmari",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.806597157,
+      "longitude": 89.8568102975
+    },
+    {
+      "code": "401823",
+      "upazila": "Chuadanga Sadar",
+      "district": "Chuadanga",
+      "division": "Khulna",
+      "latitude": 23.588630979,
+      "longitude": 88.8947210555
+    },
+    {
+      "code": "603626",
+      "upazila": "Chunarughat",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.1777056855,
+      "longitude": 91.50997535350001
+    },
+    {
+      "code": "201967",
+      "upazila": "Adarsha Sadar",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.468050486499997,
+      "longitude": 91.1565187905
+    },
+    {
+      "code": "201933",
+      "upazila": "Sadar Dakshin",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.399380970499998,
+      "longitude": 91.20279888050001
+    },
+    {
+      "code": "404717",
+      "upazila": "Dacope",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.156546062,
+      "longitude": 89.5190920365
+    },
+    {
+      "code": "609027",
+      "upazila": "Shantiganj",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 24.9227182775,
+      "longitude": 91.399574836
+    },
+    {
+      "code": "308625",
+      "upazila": "Damudya",
+      "district": "Shariatpur",
+      "division": "Dhaka",
+      "latitude": 23.1455546695,
+      "longitude": 90.4257782
+    },
+    {
+      "code": "401831",
+      "upazila": "Damurhuda",
+      "district": "Chuadanga",
+      "division": "Khulna",
+      "latitude": 23.589779704999998,
+      "longitude": 88.7308805115
+    },
+    {
+      "code": "201936",
+      "upazila": "Daudkandi",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.5020937105,
+      "longitude": 90.7834970845
+    },
+    {
+      "code": "100929",
+      "upazila": "Daulatkhan",
+      "district": "Bhola",
+      "division": "Barishal",
+      "latitude": 22.670098404500003,
+      "longitude": 90.7682221515
+    },
+    {
+      "code": "201940",
+      "upazila": "Debidwar",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.5945426125,
+      "longitude": 90.98166631000001
+    },
+    {
+      "code": "557734",
+      "upazila": "Debiganj",
+      "district": "Panchagarh",
+      "division": "Rangpur",
+      "latitude": 26.140179734,
+      "longitude": 88.7109283575
+    },
+    {
+      "code": "309323",
+      "upazila": "Delduar",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.1426136725,
+      "longitude": 89.943039117
+    },
+    {
+      "code": "609029",
+      "upazila": "Derai",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 24.7715986545,
+      "longitude": 91.31577417700001
+    },
+    {
+      "code": "453915",
+      "upazila": "Dewanganj",
+      "district": "Jamalpur",
+      "division": "Mymensingh",
+      "latitude": 25.2710933395,
+      "longitude": 89.75320367699999
+    },
+    {
+      "code": "506428",
+      "upazila": "Dhamoirhat",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 25.13050679736753,
+      "longitude": 88.82412195841816
+    },
+    {
+      "code": "302614",
+      "upazila": "Dhamrai",
+      "district": "Dhaka",
+      "division": "Dhaka",
+      "latitude": 23.931192274,
+      "longitude": 90.12485562399999
+    },
+    {
+      "code": "456116",
+      "upazila": "Dhobaura",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 25.095682588,
+      "longitude": 90.51074833
+    },
+    {
+      "code": "204643",
+      "upazila": "Dighinala",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 23.414836063499997,
+      "longitude": 92.0668179015
+    },
+    {
+      "code": "557312",
+      "upazila": "Dimla",
+      "district": "Nilphamari",
+      "division": "Rangpur",
+      "latitude": 26.1789766345,
+      "longitude": 88.9814828425
+    },
+    {
+      "code": "302618",
+      "upazila": "Dohar",
+      "district": "Dhaka",
+      "division": "Dhaka",
+      "latitude": 23.5975095435,
+      "longitude": 90.107083438
+    },
+    {
+      "code": "557315",
+      "upazila": "Domar",
+      "district": "Nilphamari",
+      "division": "Rangpur",
+      "latitude": 26.170041722500002,
+      "longitude": 88.8282246615
+    },
+    {
+      "code": "201345",
+      "upazila": "Faridganj",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.1368713775,
+      "longitude": 90.7758055125
+    },
+    {
+      "code": "201533",
+      "upazila": "Fatikchhari",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.773596336,
+      "longitude": 91.779913118
+    },
+    {
+      "code": "552738",
+      "upazila": "Fulbari",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.476382328,
+      "longitude": 88.8958082265
+    },
+    {
+      "code": "456120",
+      "upazila": "Fulbaria",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.581767028,
+      "longitude": 90.245147791
+    },
+    {
+      "code": "553221",
+      "upazila": "Fulchhari",
+      "district": "Gaibandha",
+      "division": "Rangpur",
+      "latitude": 25.2388951865,
+      "longitude": 89.656961809
+    },
+    {
+      "code": "203041",
+      "upazila": "Fulgazi",
+      "district": "Feni",
+      "division": "Chattogram",
+      "latitude": 23.1120287695,
+      "longitude": 91.45210029500001
+    },
+    {
+      "code": "456122",
+      "upazila": "Gaffargaon",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.397601125999998,
+      "longitude": 90.5465617355
+    },
+    {
+      "code": "553224",
+      "upazila": "Gaibandha Sadar",
+      "district": "Gaibandha",
+      "division": "Rangpur",
+      "latitude": 25.333149158,
+      "longitude": 89.5856013495
+    },
+    {
+      "code": "107897",
+      "upazila": "Rangabali",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 21.9457619455,
+      "longitude": 90.435275592
+    },
+    {
+      "code": "305924",
+      "upazila": "Gazaria",
+      "district": "Munshiganj",
+      "division": "Dhaka",
+      "latitude": 23.554274125,
+      "longitude": 90.6364395085
+    },
+    {
+      "code": "305622",
+      "upazila": "Ghior",
+      "district": "Manikganj",
+      "division": "Dhaka",
+      "latitude": 23.8637024605,
+      "longitude": 89.90128910749999
+    },
+    {
+      "code": "308229",
+      "upazila": "Goalanda",
+      "district": "Rajbari",
+      "division": "Dhaka",
+      "latitude": 23.756916589,
+      "longitude": 89.7650646645
+    },
+    {
+      "code": "553230",
+      "upazila": "Gobindaganj",
+      "district": "Gaibandha",
+      "division": "Rangpur",
+      "latitude": 25.1483094955,
+      "longitude": 89.3579379315
+    },
+    {
+      "code": "508134",
+      "upazila": "Godagari",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.4833241495,
+      "longitude": 88.4219554635
+    },
+    {
+      "code": "507037",
+      "upazila": "Gomastapur",
+      "district": "Chapai Nawabganj",
+      "division": "Rajshahi",
+      "latitude": 24.85516133,
+      "longitude": 88.3577044705
+    },
+    {
+      "code": "303532",
+      "upazila": "Gopalganj Sadar",
+      "district": "Gopalganj",
+      "division": "Dhaka",
+      "latitude": 23.0627786505,
+      "longitude": 89.82175536849999
+    },
+    {
+      "code": "308636",
+      "upazila": "Gosairhat",
+      "district": "Shariatpur",
+      "division": "Dhaka",
+      "latitude": 23.091724684,
+      "longitude": 90.45121134850001
+    },
+    {
+      "code": "609141",
+      "upazila": "Gowainghat",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 25.067802351,
+      "longitude": 91.9643211625
+    },
+    {
+      "code": "506941",
+      "upazila": "Gurudaspur",
+      "district": "Natore",
+      "division": "Rajshahi",
+      "latitude": 24.374500077500002,
+      "longitude": 89.19427580499999
+    },
+    {
+      "code": "201347",
+      "upazila": "Haimchar",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.063706647,
+      "longitude": 90.60934434949999
+    },
+    {
+      "code": "201349",
+      "upazila": "Hajiganj",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.2436318705,
+      "longitude": 90.83584312299999
+    },
+    {
+      "code": "456124",
+      "upazila": "Haluaghat",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 25.0923969305,
+      "longitude": 90.3626917725
+    },
+    {
+      "code": "404414",
+      "upazila": "Harinakunda",
+      "district": "Jhenaidah",
+      "division": "Khulna",
+      "latitude": 23.659875524,
+      "longitude": 89.080160775
+    },
+    {
+      "code": "305628",
+      "upazila": "Harirampur",
+      "district": "Manikganj",
+      "division": "Dhaka",
+      "latitude": 23.714175934,
+      "longitude": 89.939994821
+    },
+    {
+      "code": "555233",
+      "upazila": "Hatibandha",
+      "district": "Lalmonirhat",
+      "division": "Rangpur",
+      "latitude": 26.123496532,
+      "longitude": 89.1520096365
+    },
+    {
+      "code": "100636",
+      "upazila": "Hizla",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.970486112,
+      "longitude": 90.56192462199999
+    },
+    {
+      "code": "201954",
+      "upazila": "Homna",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.683271497,
+      "longitude": 90.8077772115
+    },
+    {
+      "code": "453929",
+      "upazila": "Islampur",
+      "district": "Jamalpur",
+      "division": "Mymensingh",
+      "latitude": 25.0690335015,
+      "longitude": 89.7854960435
+    },
+    {
+      "code": "304833",
+      "upazila": "Itna",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.548737072,
+      "longitude": 91.0871220635
+    },
+    {
+      "code": "609047",
+      "upazila": "Jagannathpur",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 24.7468182005,
+      "longitude": 91.5588427695
+    },
+    {
+      "code": "557336",
+      "upazila": "Jaldhaka",
+      "district": "Nilphamari",
+      "division": "Rangpur",
+      "latitude": 26.037737771499998,
+      "longitude": 89.0029263395
+    },
+    {
+      "code": "609050",
+      "upazila": "Jamalganj",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 24.9342729885,
+      "longitude": 91.198592606
+    },
+    {
+      "code": "453936",
+      "upazila": "Jamalpur Sadar",
+      "district": "Jamalpur",
+      "division": "Mymensingh",
+      "latitude": 24.8447376465,
+      "longitude": 90.00828159150001
+    },
+    {
+      "code": "104240",
+      "upazila": "Jhalokathi Sadar",
+      "district": "Jhalokati",
+      "division": "Barishal",
+      "latitude": 22.681940924,
+      "longitude": 90.183877798
+    },
+    {
+      "code": "404419",
+      "upazila": "Jhenaidah Sadar",
+      "district": "Jhenaidah",
+      "division": "Khulna",
+      "latitude": 23.514601057,
+      "longitude": 89.131701574
+    },
+    {
+      "code": "401855",
+      "upazila": "Jibannagar",
+      "district": "Chuadanga",
+      "division": "Khulna",
+      "latitude": 23.4424017065,
+      "longitude": 88.847924356
+    },
+    {
+      "code": "208447",
+      "upazila": "Juraichhari",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.5503310485,
+      "longitude": 92.442133805
+    },
+    {
+      "code": "605835",
+      "upazila": "Juri",
+      "district": "Maulvi Bazar",
+      "division": "Sylhet",
+      "latitude": 24.527317822500002,
+      "longitude": 92.147634661
+    },
+    {
+      "code": "406528",
+      "upazila": "Kalia",
+      "district": "Narail",
+      "division": "Khulna",
+      "latitude": 23.028005475500002,
+      "longitude": 89.654341894
+    },
+    {
+      "code": "303332",
+      "upazila": "Kaliakair",
+      "district": "Gazipur",
+      "division": "Dhaka",
+      "latitude": 24.125682333500002,
+      "longitude": 90.2543584845
+    },
+    {
+      "code": "309347",
+      "upazila": "Kalihati",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.357470485,
+      "longitude": 89.9345989665
+    },
+    {
+      "code": "457240",
+      "upazila": "Kalmakanda",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 25.071788421,
+      "longitude": 90.859409073
+    },
+    {
+      "code": "308247",
+      "upazila": "Kalukhali",
+      "district": "Rajbari",
+      "division": "Dhaka",
+      "latitude": 23.742076535000002,
+      "longitude": 89.4761973535
+    },
+    {
+      "code": "605856",
+      "upazila": "Kamalganj",
+      "district": "Maulvi Bazar",
+      "division": "Sylhet",
+      "latitude": 24.302310212000002,
+      "longitude": 91.852378718
+    },
+    {
+      "code": "205133",
+      "upazila": "Kamalnagar",
+      "district": "Lakshmipur",
+      "division": "Chattogram",
+      "latitude": 22.7692731095,
+      "longitude": 90.866525654
+    },
+    {
+      "code": "609159",
+      "upazila": "Kanaighat",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.99111148,
+      "longitude": 92.221980787
+    },
+    {
+      "code": "303336",
+      "upazila": "Kapasia",
+      "district": "Gazipur",
+      "division": "Dhaka",
+      "latitude": 24.1492220605,
+      "longitude": 90.6005299505
+    },
+    {
+      "code": "201263",
+      "upazila": "Kasba",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 23.755614321499998,
+      "longitude": 91.1327408125
+    },
+    {
+      "code": "303543",
+      "upazila": "Kashiani",
+      "district": "Gopalganj",
+      "division": "Dhaka",
+      "latitude": 23.197505264,
+      "longitude": 89.8016549055
+    },
+    {
+      "code": "304845",
+      "upazila": "Katiadi",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.27793792,
+      "longitude": 90.816924682
+    },
+    {
+      "code": "107947",
+      "upazila": "Kawkhali",
+      "district": "Pirojpur",
+      "division": "Barishal",
+      "latitude": 22.605925450925117,
+      "longitude": 90.05748254672729
+    },
+    {
+      "code": "208425",
+      "upazila": "Kawkhali",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.6236597438855,
+      "longitude": 92.01344293895863
+    },
+    {
+      "code": "508850",
+      "upazila": "Kazipur",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.666219490000003,
+      "longitude": 89.673524509
+    },
+    {
+      "code": "457247",
+      "upazila": "Kendua",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.677610233,
+      "longitude": 90.80531908
+    },
+    {
+      "code": "302638",
+      "upazila": "Keraniganj",
+      "district": "Dhaka",
+      "division": "Dhaka",
+      "latitude": 23.695316724999998,
+      "longitude": 90.3452690175
+    },
+    {
+      "code": "204649",
+      "upazila": "Khagrachhari Sadar",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 23.1659470045,
+      "longitude": 92.0009147845
+    },
+    {
+      "code": "457238",
+      "upazila": "Khaliajuri",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.72156177,
+      "longitude": 91.1216702805
+    },
+    {
+      "code": "40472133",
+      "upazila": "Khulna City Corporation",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.838686963,
+      "longitude": 89.53207081400001
+    },
+    {
+      "code": "552760",
+      "upazila": "Khansama",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.899153691000002,
+      "longitude": 88.7733104735
+    },
+    {
+      "code": "557345",
+      "upazila": "Kishoreganj",
+      "district": "Nilphamari",
+      "division": "Rangpur",
+      "latitude": 25.9014985415,
+      "longitude": 89.0333875525
+    },
+    {
+      "code": "303551",
+      "upazila": "Kotalipara",
+      "district": "Gopalganj",
+      "division": "Dhaka",
+      "latitude": 22.997719335,
+      "longitude": 90.0315049215
+    },
+    {
+      "code": "404753",
+      "upazila": "Koyra",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.096661806999997,
+      "longitude": 89.38254050500001
+    },
+    {
+      "code": "605865",
+      "upazila": "Kulaura",
+      "district": "Maulvi Bazar",
+      "division": "Sylhet",
+      "latitude": 24.488856881,
+      "longitude": 92.01480305850001
+    },
+    {
+      "code": "304854",
+      "upazila": "Kuliarchar",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.155881852999997,
+      "longitude": 90.890930913
+    },
+    {
+      "code": "603668",
+      "upazila": "Lakhai",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.301431579000003,
+      "longitude": 91.2528763195
+    },
+    {
+      "code": "204661",
+      "upazila": "Lakshmichhari",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 22.7863040415,
+      "longitude": 91.92883097
+    },
+    {
+      "code": "100954",
+      "upazila": "Lalmohan",
+      "district": "Bhola",
+      "division": "Barishal",
+      "latitude": 22.305570528,
+      "longitude": 90.76903980099999
+    },
+    {
+      "code": "555255",
+      "upazila": "Lalmonirhat Sadar",
+      "district": "Lalmonirhat",
+      "division": "Rangpur",
+      "latitude": 25.895365362,
+      "longitude": 89.4554578085
+    },
+    {
+      "code": "200351",
+      "upazila": "Lama",
+      "district": "Bandarban",
+      "division": "Chattogram",
+      "latitude": 21.800547008000002,
+      "longitude": 92.217875513
+    },
+    {
+      "code": "208458",
+      "upazila": "Langadu",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.969501936500002,
+      "longitude": 92.210725835
+    },
+    {
+      "code": "305944",
+      "upazila": "Lohajang",
+      "district": "Munshiganj",
+      "division": "Dhaka",
+      "latitude": 23.470484578,
+      "longitude": 90.32518344350001
+    },
+    {
+      "code": "457256",
+      "upazila": "Madan",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.6769933665,
+      "longitude": 90.960127861
+    },
+    {
+      "code": "453958",
+      "upazila": "Madarganj",
+      "district": "Jamalpur",
+      "division": "Mymensingh",
+      "latitude": 24.887100406000002,
+      "longitude": 89.750640715
+    },
+    {
+      "code": "603671",
+      "upazila": "Madhabpur",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.122201893,
+      "longitude": 91.335346431
+    },
+    {
+      "code": "302956",
+      "upazila": "Madhukhali",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.536217247499998,
+      "longitude": 89.6159481805
+    },
+    {
+      "code": "506450",
+      "upazila": "Mahadebpur",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.911484975999997,
+      "longitude": 88.75835061199999
+    },
+    {
+      "code": "204665",
+      "upazila": "Mahalchhari",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 22.968101320499997,
+      "longitude": 92.05067633249999
+    },
+    {
+      "code": "202249",
+      "upazila": "Maheshkhali",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.6211934345,
+      "longitude": 91.9310390715
+    },
+    {
+      "code": "404471",
+      "upazila": "Maheshpur",
+      "district": "Jhenaidah",
+      "division": "Khulna",
+      "latitude": 23.3199205875,
+      "longitude": 88.865768283
+    },
+    {
+      "code": "506447",
+      "upazila": "Manda",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.7493604615,
+      "longitude": 88.721328
+    },
+    {
+      "code": "204667",
+      "upazila": "Manikchhari",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 22.84565181,
+      "longitude": 91.8252150765
+    },
+    {
+      "code": "201974",
+      "upazila": "Manoharganj",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.1426942955,
+      "longitude": 91.0628100845
+    },
+    {
+      "code": "100965",
+      "upazila": "Manpura",
+      "district": "Bhola",
+      "division": "Barishal",
+      "latitude": 22.208205868,
+      "longitude": 90.946369978
+    },
+    {
+      "code": "107958",
+      "upazila": "Mathbaria",
+      "district": "Pirojpur",
+      "division": "Barishal",
+      "latitude": 22.279899052,
+      "longitude": 89.9563872205
+    },
+    {
+      "code": "204670",
+      "upazila": "Matiranga",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 23.190734566,
+      "longitude": 91.864373067
+    },
+    {
+      "code": "201376",
+      "upazila": "Matlab Dakshin",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.3525174245,
+      "longitude": 90.74280847649999
+    },
+    {
+      "code": "201379",
+      "upazila": "Matlab Uttar",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.40863658,
+      "longitude": 90.64655326350001
+    },
+    {
+      "code": "201975",
+      "upazila": "Meghna",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.6185541865,
+      "longitude": 90.696806149
+    },
+    {
+      "code": "100662",
+      "upazila": "Mehendiganj",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.790986753,
+      "longitude": 90.53580719
+    },
+    {
+      "code": "405787",
+      "upazila": "Meherpur Sadar",
+      "district": "Meherpur",
+      "division": "Khulna",
+      "latitude": 23.771563344500002,
+      "longitude": 88.6704700855
+    },
+    {
+      "code": "201553",
+      "upazila": "Mirsharai",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.8132124075,
+      "longitude": 91.5489590135
+    },
+    {
+      "code": "107876",
+      "upazila": "Mirzaganj",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 22.348211226,
+      "longitude": 90.2240945705
+    },
+    {
+      "code": "304859",
+      "upazila": "Mithamain",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.427795453999998,
+      "longitude": 91.11962393600001
+    },
+    {
+      "code": "457263",
+      "upazila": "Mohanganj",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.82402364,
+      "longitude": 91.0219084185
+    },
+    {
+      "code": "508153",
+      "upazila": "Mohanpur",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.556440143499998,
+      "longitude": 88.6431075195
+    },
+    {
+      "code": "400158",
+      "upazila": "Mongla",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.153285164,
+      "longitude": 89.6590388495
+    },
+    {
+      "code": "400160",
+      "upazila": "Morrelganj",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.476203684,
+      "longitude": 89.8310017755
+    },
+    {
+      "code": "405760",
+      "upazila": "Mujibnagar",
+      "district": "Meherpur",
+      "division": "Khulna",
+      "latitude": 23.673038744,
+      "longitude": 88.6329798515
+    },
+    {
+      "code": "305956",
+      "upazila": "Munshiganj Sadar",
+      "district": "Munshiganj",
+      "division": "Dhaka",
+      "latitude": 23.4777725335,
+      "longitude": 90.52210700200001
+    },
+    {
+      "code": "201981",
+      "upazila": "Muradnagar",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.651147306,
+      "longitude": 90.958746878
+    },
+    {
+      "code": "603677",
+      "upazila": "Nabiganj",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.553528157499997,
+      "longitude": 91.5320113645
+    },
+    {
+      "code": "201285",
+      "upazila": "Nabinagar",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 23.866174098000002,
+      "longitude": 90.9684166975
+    },
+    {
+      "code": "507056",
+      "upazila": "Nachole",
+      "district": "Chapai Nawabganj",
+      "division": "Rajshahi",
+      "latitude": 24.7364768325,
+      "longitude": 88.3913494125
+    },
+    {
+      "code": "554961",
+      "upazila": "Nageshwari",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.9620483435,
+      "longitude": 89.739065272
+    },
+    {
+      "code": "200373",
+      "upazila": "Naikhongchhari",
+      "district": "Bandarban",
+      "division": "Chattogram",
+      "latitude": 21.413095969,
+      "longitude": 92.2557070865
+    },
+    {
+      "code": "104273",
+      "upazila": "Nalchhity",
+      "district": "Jhalokati",
+      "division": "Barishal",
+      "latitude": 22.590498938,
+      "longitude": 90.285567085
+    },
+    {
+      "code": "456172",
+      "upazila": "Nandail",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.551871306000002,
+      "longitude": 90.6685046165
+    },
+    {
+      "code": "501067",
+      "upazila": "Nandigram",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.6881610965,
+      "longitude": 89.2363045845
+    },
+    {
+      "code": "201987",
+      "upazila": "Nangalkot",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.151721070999997,
+      "longitude": 91.207963286
+    },
+    {
+      "code": "208475",
+      "upazila": "Naniarchar",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.8422125395,
+      "longitude": 92.0819455775
+    },
+    {
+      "code": "406576",
+      "upazila": "Narail Sadar",
+      "district": "Narail",
+      "division": "Khulna",
+      "latitude": 23.1591467485,
+      "longitude": 89.4948286235
+    },
+    {
+      "code": "306758",
+      "upazila": "Narayanganj Sadar",
+      "district": "Naraynganj",
+      "division": "Dhaka",
+      "latitude": 23.624285575000002,
+      "longitude": 90.49018352499999
+    },
+    {
+      "code": "308665",
+      "upazila": "Naria",
+      "district": "Shariatpur",
+      "division": "Dhaka",
+      "latitude": 23.3150441105,
+      "longitude": 90.4129446295
+    },
+    {
+      "code": "201290",
+      "upazila": "Nasirnagar",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 24.172138007999997,
+      "longitude": 91.17419739050001
+    },
+    {
+      "code": "506963",
+      "upazila": "Natore Sadar",
+      "district": "Natore",
+      "division": "Rajshahi",
+      "latitude": 24.3957872725,
+      "longitude": 88.9785878975
+    },
+    {
+      "code": "107976",
+      "upazila": "Nazirpur",
+      "district": "Pirojpur",
+      "division": "Barishal",
+      "latitude": 22.768962906,
+      "longitude": 89.957330794
+    },
+    {
+      "code": "107987",
+      "upazila": "Nesarabad (Swarupkati)",
+      "district": "Pirojpur",
+      "division": "Barishal",
+      "latitude": 22.730535271,
+      "longitude": 90.09168075
+    },
+    {
+      "code": "457274",
+      "upazila": "Netrakona Sadar",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.892710946999998,
+      "longitude": 90.74279976049999
+    },
+    {
+      "code": "506469",
+      "upazila": "Niamatpur",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.829206038499997,
+      "longitude": 88.5233563995
+    },
+    {
+      "code": "304876",
+      "upazila": "Nikli",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.3505708035,
+      "longitude": 90.95487567149999
+    },
+    {
+      "code": "207587",
+      "upazila": "Noakhali Sadar",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 22.8062321165,
+      "longitude": 91.0303755585
+    },
+    {
+      "code": "304879",
+      "upazila": "Pakundia",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.3153055645,
+      "longitude": 90.69218085
+    },
+    {
+      "code": "557773",
+      "upazila": "Panchagarh Sadar",
+      "district": "Panchagarh",
+      "division": "Rangpur",
+      "latitude": 26.3761107825,
+      "longitude": 88.5980021635
+    },
+    {
+      "code": "204677",
+      "upazila": "Panchhari",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 23.347458277,
+      "longitude": 91.9229423065
+    },
+    {
+      "code": "552777",
+      "upazila": "Parbatipur",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.643230385,
+      "longitude": 88.95980002
+    },
+    {
+      "code": "506475",
+      "upazila": "Patnitala",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 25.096952701,
+      "longitude": 88.741125333
+    },
+    {
+      "code": "107980",
+      "upazila": "Pirojpur Sadar",
+      "district": "Pirojpur",
+      "division": "Barishal",
+      "latitude": 22.595282027,
+      "longitude": 89.962178938
+    },
+    {
+      "code": "506479",
+      "upazila": "Porsha",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.9966418825,
+      "longitude": 88.51988716599999
+    },
+    {
+      "code": "208478",
+      "upazila": "Rajasthali",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.3748516285,
+      "longitude": 92.232274881
+    },
+    {
+      "code": "204680",
+      "upazila": "Ramgarh",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 22.956035045,
+      "longitude": 91.790205156
+    },
+    {
+      "code": "205173",
+      "upazila": "Ramgati",
+      "district": "Lakshmipur",
+      "division": "Chattogram",
+      "latitude": 22.6145594565,
+      "longitude": 90.901656738
+    },
+    {
+      "code": "400173",
+      "upazila": "Rampal",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.590436177,
+      "longitude": 89.6582298535
+    },
+    {
+      "code": "202266",
+      "upazila": "Ramu",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.446392101999997,
+      "longitude": 92.1230741025
+    },
+    {
+      "code": "208487",
+      "upazila": "Rangamati Sadar",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.666910170999998,
+      "longitude": 92.19908674999999
+    },
+    {
+      "code": "201570",
+      "upazila": "Rangunia",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.4643833755,
+      "longitude": 92.061372986
+    },
+    {
+      "code": "506485",
+      "upazila": "Raninagar",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.714579297,
+      "longitude": 88.9974351905
+    },
+    {
+      "code": "201574",
+      "upazila": "Raozan",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.536448616999998,
+      "longitude": 91.91471996850001
+    },
+    {
+      "code": "554979",
+      "upazila": "Raumari",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.5805294585,
+      "longitude": 89.82674431800001
+    },
+    {
+      "code": "200389",
+      "upazila": "Rowangchhari",
+      "district": "Bandarban",
+      "division": "Chattogram",
+      "latitude": 22.1734039065,
+      "longitude": 92.3573376905
+    },
+    {
+      "code": "508861",
+      "upazila": "Royganj",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.4863989755,
+      "longitude": 89.506068687
+    },
+    {
+      "code": "205158",
+      "upazila": "Roypur",
+      "district": "Lakshmipur",
+      "division": "Chattogram",
+      "latitude": 22.985140785,
+      "longitude": 90.742348744
+    },
+    {
+      "code": "306864",
+      "upazila": "Roypura",
+      "district": "Narshingdi",
+      "division": "Dhaka",
+      "latitude": 23.9642412645,
+      "longitude": 90.86399428850001
+    },
+    {
+      "code": "200391",
+      "upazila": "Ruma",
+      "district": "Bandarban",
+      "division": "Chattogram",
+      "latitude": 22.024036541,
+      "longitude": 92.455836516
+    },
+    {
+      "code": "306768",
+      "upazila": "Rupganj",
+      "district": "Naraynganj",
+      "division": "Dhaka",
+      "latitude": 23.804738257,
+      "longitude": 90.5421875885
+    },
+    {
+      "code": "302984",
+      "upazila": "Sadarpur",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.474681265999997,
+      "longitude": 90.04839052049999
+    },
+    {
+      "code": "553288",
+      "upazila": "Saghata",
+      "district": "Gaibandha",
+      "division": "Rangpur",
+      "latitude": 25.137112555500003,
+      "longitude": 89.571223783
+    },
+    {
+      "code": "201578",
+      "upazila": "Sandwip",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.501960772,
+      "longitude": 91.4804883655
+    },
+    {
+      "code": "506486",
+      "upazila": "Sapahar",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 25.112568075,
+      "longitude": 88.53142536600001
+    },
+    {
+      "code": "400177",
+      "upazila": "Sarankhola",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.086886145,
+      "longitude": 89.8134661995
+    },
+    {
+      "code": "501081",
+      "upazila": "Sariakandi",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.893358522,
+      "longitude": 89.631976685
+    },
+    {
+      "code": "201582",
+      "upazila": "Satkania",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.109363504500003,
+      "longitude": 92.054242915
+    },
+    {
+      "code": "302672",
+      "upazila": "Savar",
+      "district": "Dhaka",
+      "division": "Dhaka",
+      "latitude": 23.8866932495,
+      "longitude": 90.2693555945
+    },
+    {
+      "code": "305974",
+      "upazila": "Serajdikhan",
+      "district": "Munshiganj",
+      "division": "Dhaka",
+      "latitude": 23.59803154405023,
+      "longitude": 90.3578881096677
+    },
+    {
+      "code": "508867",
+      "upazila": "Shahjadpur",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.1634267245,
+      "longitude": 89.6390926245
+    },
+    {
+      "code": "201395",
+      "upazila": "Shahrasti",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.2079805795,
+      "longitude": 90.9509151765
+    },
+    {
+      "code": "404480",
+      "upazila": "Shailkupa",
+      "district": "Jhenaidah",
+      "division": "Khulna",
+      "latitude": 23.664154131,
+      "longitude": 89.24174790000001
+    },
+    {
+      "code": "405585",
+      "upazila": "Shalikha",
+      "district": "Magura",
+      "division": "Khulna",
+      "latitude": 23.3511201505,
+      "longitude": 89.368082218
+    },
+    {
+      "code": "308669",
+      "upazila": "Shariatpur Sadar",
+      "district": "Shariatpur",
+      "division": "Dhaka",
+      "latitude": 23.219187507500003,
+      "longitude": 90.31642112649999
+    },
+    {
+      "code": "404190",
+      "upazila": "Sharsha",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 23.056970990499998,
+      "longitude": 88.92947495749999
+    },
+    {
+      "code": "305678",
+      "upazila": "Shibalaya",
+      "district": "Manikganj",
+      "division": "Dhaka",
+      "latitude": 23.8234501775,
+      "longitude": 89.81414501649999
+    },
+    {
+      "code": "408786",
+      "upazila": "Shyamnagar",
+      "district": "Satkhira",
+      "division": "Khulna",
+      "latitude": 22.024818433,
+      "longitude": 89.1837886655
+    },
+    {
+      "code": "506991",
+      "upazila": "Singra",
+      "district": "Natore",
+      "division": "Rajshahi",
+      "latitude": 24.545394039999998,
+      "longitude": 89.1885819595
+    },
+    {
+      "code": "207583",
+      "upazila": "Sonaimuri",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 23.036203243000003,
+      "longitude": 91.098450732
+    },
+    {
+      "code": "458990",
+      "upazila": "Sreebardi",
+      "district": "Sherpur",
+      "division": "Mymensingh",
+      "latitude": 25.176507645,
+      "longitude": 89.96984095799999
+    },
+    {
+      "code": "305984",
+      "upazila": "Sreenagar",
+      "district": "Munshiganj",
+      "division": "Dhaka",
+      "latitude": 23.5540931875,
+      "longitude": 90.2628412935
+    },
+    {
+      "code": "609086",
+      "upazila": "Shalla",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 24.689977047,
+      "longitude": 91.259851737
+    },
+    {
+      "code": "609089",
+      "upazila": "Sunamganj Sadar",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 25.0536463655,
+      "longitude": 91.39331756050001
+    },
+    {
+      "code": "553291",
+      "upazila": "Sundarganj",
+      "district": "Gaibandha",
+      "division": "Rangpur",
+      "latitude": 25.521933822,
+      "longitude": 89.5526314185
+    },
+    {
+      "code": "609092",
+      "upazila": "Tahirpur",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 25.117038646,
+      "longitude": 91.1572562315
+    },
+    {
+      "code": "309395",
+      "upazila": "Tangail Sadar",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.259150189000003,
+      "longitude": 89.8761021225
+    },
+    {
+      "code": "508194",
+      "upazila": "Tanore",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.60139781,
+      "longitude": 88.516192554
+    },
+    {
+      "code": "558592",
+      "upazila": "Taraganj",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.7826822615,
+      "longitude": 89.0246280485
+    },
+    {
+      "code": "304892",
+      "upazila": "Tarail",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.552528852000002,
+      "longitude": 90.8899514875
+    },
+    {
+      "code": "100991",
+      "upazila": "Tazumuddin",
+      "district": "Bhola",
+      "division": "Barishal",
+      "latitude": 22.440806713999997,
+      "longitude": 90.879543829
+    },
+    {
+      "code": "202290",
+      "upazila": "Teknaf",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 20.937989451500002,
+      "longitude": 92.227716156
+    },
+    {
+      "code": "557790",
+      "upazila": "Tentulia",
+      "district": "Panchagarh",
+      "division": "Rangpur",
+      "latitude": 26.518389035,
+      "longitude": 88.433140978
+    },
+    {
+      "code": "559494",
+      "upazila": "Thakurgaon Sadar",
+      "district": "Thakurgaon",
+      "division": "Rangpur",
+      "latitude": 26.054229803,
+      "longitude": 88.472447144
+    },
+    {
+      "code": "200395",
+      "upazila": "Thanchi",
+      "district": "Bandarban",
+      "division": "Chattogram",
+      "latitude": 21.5885835815,
+      "longitude": 92.507011524
+    },
+    {
+      "code": "201994",
+      "upazila": "Titas",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.5918846505,
+      "longitude": 90.7878989245
+    },
+    {
+      "code": "202294",
+      "upazila": "Ukhia",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.2164176795,
+      "longitude": 92.122550631
+    },
+    {
+      "code": "554994",
+      "upazila": "Ulipur",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.687627745,
+      "longitude": 89.67408732300001
+    },
+    {
+      "code": "308694",
+      "upazila": "Zanjira",
+      "district": "Shariatpur",
+      "division": "Dhaka",
+      "latitude": 23.352960782,
+      "longitude": 90.33425859549999
+    },
+    {
+      "code": "30260225",
+      "upazila": "Dhaka North City Corporation",
+      "district": "Dhaka",
+      "division": "Dhaka",
+      "latitude": 23.821933416500002,
+      "longitude": 90.409968628
+    },
+    {
+      "code": "100492",
+      "upazila": "Taltali",
+      "district": "Barguna",
+      "division": "Barishal",
+      "latitude": 21.9727770885,
+      "longitude": 90.1082554085
+    },
+    {
+      "code": "405039",
+      "upazila": "Daulatpur",
+      "district": "Kushtia",
+      "division": "Khulna",
+      "latitude": 24.04402338,
+      "longitude": 88.83207880699999
+    },
+    {
+      "code": "107857",
+      "upazila": "Galachipa",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 22.1643112585,
+      "longitude": 90.4615587885
+    },
+    {
+      "code": "555270",
+      "upazila": "Patgram",
+      "district": "Lalmonirhat",
+      "division": "Rangpur",
+      "latitude": 26.3388561085,
+      "longitude": 89.020499917
+    },
+    {
+      "code": "555202",
+      "upazila": "Aditmari",
+      "district": "Lalmonirhat",
+      "division": "Rangpur",
+      "latitude": 25.9493219195,
+      "longitude": 89.3674623735
+    },
+    {
+      "code": "554906",
+      "upazila": "Bhurungamari",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 26.1321480625,
+      "longitude": 89.69502046
+    },
+    {
+      "code": "408747",
+      "upazila": "Kaliganj",
+      "district": "Satkhira",
+      "division": "Khulna",
+      "latitude": 22.442346331000003,
+      "longitude": 89.066913082
+    },
+    {
+      "code": "404433",
+      "upazila": "Kaliganj",
+      "district": "Jhenaidah",
+      "division": "Khulna",
+      "latitude": 23.3720710515,
+      "longitude": 89.1556574635
+    },
+    {
+      "code": "303334",
+      "upazila": "Kaliganj",
+      "district": "Gazipur",
+      "division": "Dhaka",
+      "latitude": 23.945878837000002,
+      "longitude": 90.56030153399999
+    },
+    {
+      "code": "555239",
+      "upazila": "Kaliganj",
+      "district": "Lalmonirhat",
+      "division": "Rangpur",
+      "latitude": 25.9746726765,
+      "longitude": 89.2437765455
+    },
+    {
+      "code": "201539",
+      "upazila": "Karnafuli",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.28525141,
+      "longitude": 91.8407705905
+    },
+    {
+      "code": "204647",
+      "upazila": "Guimara",
+      "district": "Khagrachhari",
+      "division": "Chattogram",
+      "latitude": 22.9505677885,
+      "longitude": 91.91243677
+    },
+    {
+      "code": "506955",
+      "upazila": "Naldanga",
+      "district": "Natore",
+      "division": "Rajshahi",
+      "latitude": 24.5127371375,
+      "longitude": 88.9736698245
+    },
+    {
+      "code": "559482",
+      "upazila": "Pirganj",
+      "district": "Thakurgaon",
+      "division": "Rangpur",
+      "latitude": 25.823857514,
+      "longitude": 88.3794637365
+    },
+    {
+      "code": "507088",
+      "upazila": "Shibganj",
+      "district": "Chapai Nawabganj",
+      "division": "Rajshahi",
+      "latitude": 24.719676767499998,
+      "longitude": 88.153429664
+    },
+    {
+      "code": "503874",
+      "upazila": "Panchbibi",
+      "district": "Joypurhat",
+      "division": "Rajshahi",
+      "latitude": 25.204374917,
+      "longitude": 89.0742747695
+    },
+    {
+      "code": "201918",
+      "upazila": "Burichang",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.537939468,
+      "longitude": 91.1216709685
+    },
+    {
+      "code": "302990",
+      "upazila": "Saltha",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.408411729,
+      "longitude": 89.8029384355
+    },
+    {
+      "code": "456188",
+      "upazila": "Tarakanda",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.8512504275,
+      "longitude": 90.4485774115
+    },
+    {
+      "code": "201973",
+      "upazila": "Lalmai",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.2934088345,
+      "longitude": 91.15184636800001
+    },
+    {
+      "code": "302662",
+      "upazila": "Nawabganj",
+      "district": "Dhaka",
+      "division": "Dhaka",
+      "latitude": 23.658122094,
+      "longitude": 90.152244052
+    },
+    {
+      "code": "404104",
+      "upazila": "Abhaynagar",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 23.0199144425,
+      "longitude": 89.432404449
+    },
+    {
+      "code": "503813",
+      "upazila": "Akkelpur",
+      "district": "Joypurhat",
+      "division": "Rajshahi",
+      "latitude": 24.948112379999998,
+      "longitude": 89.0461873055
+    },
+    {
+      "code": "100409",
+      "upazila": "Amtali",
+      "district": "Barguna",
+      "division": "Barishal",
+      "latitude": 22.139881197,
+      "longitude": 90.25869179399999
+    },
+    {
+      "code": "201233",
+      "upazila": "Ashuganj",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 24.019243902,
+      "longitude": 91.02012321800001
+    },
+    {
+      "code": "507605",
+      "upazila": "Atgharia",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 24.110263885805594,
+      "longitude": 89.27981610381364
+    },
+    {
+      "code": "557704",
+      "upazila": "Atwari",
+      "district": "Panchagarh",
+      "division": "Rangpur",
+      "latitude": 26.277240443,
+      "longitude": 88.4392905885
+    },
+    {
+      "code": "100603",
+      "upazila": "Babuganj",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.833414759,
+      "longitude": 90.310374415
+    },
+    {
+      "code": "558503",
+      "upazila": "Badarganj",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.649926897999997,
+      "longitude": 89.04319899500001
+    },
+    {
+      "code": "400108",
+      "upazila": "Bagerhat Sadar",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.6740588095,
+      "longitude": 89.75082189599999
+    },
+    {
+      "code": "404109",
+      "upazila": "Bagherpara",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 23.253233312,
+      "longitude": 89.32196561800001
+    },
+    {
+      "code": "508112",
+      "upazila": "Baghmara",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.5974051165,
+      "longitude": 88.81876030149999
+    },
+    {
+      "code": "603605",
+      "upazila": "Bahubal",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.3653746275,
+      "longitude": 91.54698083400001
+    },
+    {
+      "code": "609108",
+      "upazila": "Balaganj",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.6841342915,
+      "longitude": 91.806065534
+    },
+    {
+      "code": "559408",
+      "upazila": "Baliadangi",
+      "district": "Thakurgaon",
+      "division": "Rangpur",
+      "latitude": 26.0972705,
+      "longitude": 88.26319845699999
+    },
+    {
+      "code": "100419",
+      "upazila": "Bamna",
+      "district": "Barguna",
+      "division": "Barishal",
+      "latitude": 22.26891235,
+      "longitude": 90.049644081
+    },
+    {
+      "code": "200314",
+      "upazila": "Bandarban Sadar",
+      "district": "Bandarban",
+      "division": "Chattogram",
+      "latitude": 22.146465982000002,
+      "longitude": 92.23266519399999
+    },
+    {
+      "code": "100428",
+      "upazila": "Barguna Sadar",
+      "district": "Barguna",
+      "division": "Barishal",
+      "latitude": 22.1087143385,
+      "longitude": 90.10661061900001
+    },
+    {
+      "code": "100651",
+      "upazila": "Barishal Sadar (Kotwali)",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.7168596415,
+      "longitude": 90.41875538650001
+    },
+    {
+      "code": "605814",
+      "upazila": "Barlekha",
+      "district": "Maulvi Bazar",
+      "division": "Sylhet",
+      "latitude": 24.718519389,
+      "longitude": 92.161262405
+    },
+    {
+      "code": "201909",
+      "upazila": "Barura",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.343159923,
+      "longitude": 91.047301627
+    },
+    {
+      "code": "309309",
+      "upazila": "Basail",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.23720789,
+      "longitude": 90.04467763400001
+    },
+    {
+      "code": "404712",
+      "upazila": "Batiaghata",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.7092357875,
+      "longitude": 89.50544069099999
+    },
+    {
+      "code": "107838",
+      "upazila": "Bauphal",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 22.4499277655,
+      "longitude": 90.540372155
+    },
+    {
+      "code": "609117",
+      "upazila": "Beanibazar",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.854258624499998,
+      "longitude": 92.1601943915
+    },
+    {
+      "code": "207507",
+      "upazila": "Begumganj",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 22.931582157,
+      "longitude": 91.09832528449999
+    },
+    {
+      "code": "306807",
+      "upazila": "Belabo",
+      "district": "Narshingdi",
+      "division": "Dhaka",
+      "latitude": 24.100985881156912,
+      "longitude": 90.84892665248437
+    },
+    {
+      "code": "507616",
+      "upazila": "Bera",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 23.9558449405,
+      "longitude": 89.6581805555
+    },
+    {
+      "code": "100447",
+      "upazila": "Betagi",
+      "district": "Barguna",
+      "division": "Barishal",
+      "latitude": 22.3474888525,
+      "longitude": 90.15770129399999
+    },
+    {
+      "code": "107914",
+      "upazila": "Bhandaria",
+      "district": "Pirojpur",
+      "division": "Barishal",
+      "latitude": 22.4561037245,
+      "longitude": 90.0163784285
+    },
+    {
+      "code": "405015",
+      "upazila": "Bheramara",
+      "district": "Kushtia",
+      "division": "Khulna",
+      "latitude": 24.0589913345,
+      "longitude": 88.98329718950001
+    },
+    {
+      "code": "309319",
+      "upazila": "Bhuapur",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.4848121995,
+      "longitude": 89.81549423300001
+    },
+    {
+      "code": "201207",
+      "upazila": "Bijoynagar",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 23.9921672715,
+      "longitude": 91.214682631
+    },
+    {
+      "code": "552717",
+      "upazila": "Biral",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.637189729,
+      "longitude": 88.544761929
+    },
+    {
+      "code": "552710",
+      "upazila": "Birampur",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.395489161,
+      "longitude": 88.9580740235
+    },
+    {
+      "code": "609120",
+      "upazila": "Bishwanath",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.839908385,
+      "longitude": 91.7266290755
+    },
+    {
+      "code": "201512",
+      "upazila": "Boalkhali",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.3793894515,
+      "longitude": 91.976970878
+    },
+    {
+      "code": "302918",
+      "upazila": "Boalmari",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.405619702,
+      "longitude": 89.6970243755
+    },
+    {
+      "code": "501020",
+      "upazila": "Bogura Sadar",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.9014320985,
+      "longitude": 89.3522153195
+    },
+    {
+      "code": "201915",
+      "upazila": "Brahmanpara",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.6474329805,
+      "longitude": 91.10150822
+    },
+    {
+      "code": "201213",
+      "upazila": "Brahmanbaria Sadar",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 23.9507349525,
+      "longitude": 91.11584445400001
+    },
+    {
+      "code": "201518",
+      "upazila": "Chandanaish",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.2215906225,
+      "longitude": 92.0487711855
+    },
+    {
+      "code": "201927",
+      "upazila": "Chandina",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.42679191,
+      "longitude": 90.95577106100001
+    },
+    {
+      "code": "507066",
+      "upazila": "Chapainawabganj Sadar",
+      "district": "Chapai Nawabganj",
+      "division": "Rajshahi",
+      "latitude": 24.5665417075,
+      "longitude": 88.2548512055
+    },
+    {
+      "code": "302921",
+      "upazila": "Charbhadrasan",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.5882985595,
+      "longitude": 89.9900030415
+    },
+    {
+      "code": "508125",
+      "upazila": "Charghat",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.301137276,
+      "longitude": 88.763947883
+    },
+    {
+      "code": "404111",
+      "upazila": "Chaugachha",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 23.2725283955,
+      "longitude": 89.0108202985
+    },
+    {
+      "code": "203014",
+      "upazila": "Chhagalnaiya",
+      "district": "Feni",
+      "division": "Chattogram",
+      "latitude": 23.0068828855,
+      "longitude": 91.5052642685
+    },
+    {
+      "code": "203025",
+      "upazila": "Daganbhuiyan",
+      "district": "Feni",
+      "division": "Chattogram",
+      "latitude": 22.972750104,
+      "longitude": 91.30847618499999
+    },
+    {
+      "code": "609131",
+      "upazila": "Dakshin Surma",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.8142828275,
+      "longitude": 91.879377359
+    },
+    {
+      "code": "107852",
+      "upazila": "Dashmina",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 22.241548079,
+      "longitude": 90.5651972425
+    },
+    {
+      "code": "305610",
+      "upazila": "Daulatpur",
+      "district": "Manikganj",
+      "division": "Dhaka",
+      "latitude": 23.9656795325,
+      "longitude": 89.8186925345
+    },
+    {
+      "code": "408725",
+      "upazila": "Debhata",
+      "district": "Satkhira",
+      "division": "Khulna",
+      "latitude": 22.5940100425,
+      "longitude": 89.0122086805
+    },
+    {
+      "code": "309325",
+      "upazila": "Dhanbari",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.6913231385,
+      "longitude": 89.92740987549999
+    },
+    {
+      "code": "501027",
+      "upazila": "Dhunat",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.68251137021093,
+      "longitude": 89.5501822674462
+    },
+    {
+      "code": "501033",
+      "upazila": "Dhupchanchia",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.884419103,
+      "longitude": 89.142720089
+    },
+    {
+      "code": "404740",
+      "upazila": "Dighalia",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.922197328499998,
+      "longitude": 89.56428133899999
+    },
+    {
+      "code": "552764",
+      "upazila": "Dinajpur Sadar",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.6308796705,
+      "longitude": 88.6693794785
+    },
+    {
+      "code": "107855",
+      "upazila": "Dumki",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 22.4443096495,
+      "longitude": 90.371176144
+    },
+    {
+      "code": "404730",
+      "upazila": "Dumuria",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.796550836500003,
+      "longitude": 89.39192168950001
+    },
+    {
+      "code": "400134",
+      "upazila": "Fakirhat",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.734882241,
+      "longitude": 89.67374813250001
+    },
+    {
+      "code": "507633",
+      "upazila": "Faridpur",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 24.156119050999997,
+      "longitude": 89.4462260715
+    },
+    {
+      "code": "302947",
+      "upazila": "Faridpur Sadar",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.6023027795,
+      "longitude": 89.808839294
+    },
+    {
+      "code": "609135",
+      "upazila": "Fenchuganj",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.6978059605,
+      "longitude": 91.9642296515
+    },
+    {
+      "code": "203029",
+      "upazila": "Feni Sadar",
+      "district": "Feni",
+      "division": "Chattogram",
+      "latitude": 22.988695448999998,
+      "longitude": 91.409355454
+    },
+    {
+      "code": "501040",
+      "upazila": "Gabtali",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.892050464,
+      "longitude": 89.461030007
+    },
+    {
+      "code": "558527",
+      "upazila": "Gangachara",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.888610885,
+      "longitude": 89.2200211845
+    },
+    {
+      "code": "405747",
+      "upazila": "Gangni",
+      "district": "Meherpur",
+      "division": "Khulna",
+      "latitude": 23.8555202925,
+      "longitude": 88.762772489
+    },
+    {
+      "code": "456123",
+      "upazila": "Gauripur",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.7653070415,
+      "longitude": 90.588895993
+    },
+    {
+      "code": "309328",
+      "upazila": "Ghatail",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.479160880000002,
+      "longitude": 90.0599218035
+    },
+    {
+      "code": "552743",
+      "upazila": "Ghoraghat",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.2978129305,
+      "longitude": 89.21906153649999
+    },
+    {
+      "code": "609138",
+      "upazila": "Golapganj",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.812359713,
+      "longitude": 92.0155435935
+    },
+    {
+      "code": "603644",
+      "upazila": "Habiganj Sadar",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.363353105999998,
+      "longitude": 91.405623227
+    },
+    {
+      "code": "552747",
+      "upazila": "Hakimpur",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.2962082975,
+      "longitude": 89.060885391
+    },
+    {
+      "code": "559451",
+      "upazila": "Haripur",
+      "district": "Thakurgaon",
+      "division": "Rangpur",
+      "latitude": 25.887461512,
+      "longitude": 88.16317473999999
+    },
+    {
+      "code": "201537",
+      "upazila": "Hathazari",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.51821463,
+      "longitude": 91.78478488900001
+    },
+    {
+      "code": "304827",
+      "upazila": "Hossainpur",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.4509833,
+      "longitude": 90.655138706
+    },
+    {
+      "code": "507639",
+      "upazila": "Ishwardi",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 24.0635725055,
+      "longitude": 89.090862385
+    },
+    {
+      "code": "456131",
+      "upazila": "Ishwarganj",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.643672463,
+      "longitude": 90.612824536
+    },
+    {
+      "code": "609153",
+      "upazila": "Jaintiapur",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 25.052699962,
+      "longitude": 92.10029990800001
+    },
+    {
+      "code": "404147",
+      "upazila": "Jashore Sadar",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 23.199164155,
+      "longitude": 89.2444543675
+    },
+    {
+      "code": "458937",
+      "upazila": "Jhenaigati",
+      "district": "Sherpur",
+      "division": "Mymensingh",
+      "latitude": 25.1716173835,
+      "longitude": 90.05417221350001
+    },
+    {
+      "code": "404123",
+      "upazila": "Jhikargachha",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 23.069289368,
+      "longitude": 89.069692852
+    },
+    {
+      "code": "503847",
+      "upazila": "Joypurhat Sadar",
+      "district": "Joypurhat",
+      "division": "Rajshahi",
+      "latitude": 25.117350788,
+      "longitude": 89.04477912600001
+    },
+    {
+      "code": "207547",
+      "upazila": "Kabirhat",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 22.7979507745,
+      "longitude": 91.195767435
+    },
+    {
+      "code": "501054",
+      "upazila": "Kahaloo",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.827126251,
+      "longitude": 89.2363561275
+    },
+    {
+      "code": "552756",
+      "upazila": "Kaharole",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.8116205555,
+      "longitude": 88.6121924515
+    },
+    {
+      "code": "107866",
+      "upazila": "Kalapara",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 21.9530255845,
+      "longitude": 90.23013290349999
+    },
+    {
+      "code": "503858",
+      "upazila": "Kalai",
+      "district": "Joypurhat",
+      "division": "Rajshahi",
+      "latitude": 25.078955385500002,
+      "longitude": 89.2049868845
+    },
+    {
+      "code": "408743",
+      "upazila": "Kalaroa",
+      "district": "Satkhira",
+      "division": "Khulna",
+      "latitude": 22.876491043,
+      "longitude": 89.0186183735
+    },
+    {
+      "code": "508844",
+      "upazila": "Kamarkhanda",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.377849061,
+      "longitude": 89.6417481515
+    },
+    {
+      "code": "104243",
+      "upazila": "Kanthalia",
+      "district": "Jhalokati",
+      "division": "Barishal",
+      "latitude": 22.423048145000003,
+      "longitude": 90.1032553685
+    },
+    {
+      "code": "208436",
+      "upazila": "Kaptai",
+      "district": "Rangamati",
+      "division": "Chattogram",
+      "latitude": 22.47362093,
+      "longitude": 92.2068200095
+    },
+    {
+      "code": "304842",
+      "upazila": "Karimganj",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.453207826,
+      "longitude": 90.90455953649999
+    },
+    {
+      "code": "558542",
+      "upazila": "Kaunia",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.7648829475,
+      "longitude": 89.39721430399999
+    },
+    {
+      "code": "404138",
+      "upazila": "Keshabpur",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 22.8714567745,
+      "longitude": 89.2329655305
+    },
+    {
+      "code": "405063",
+      "upazila": "Khoksa",
+      "district": "Kushtia",
+      "division": "Khulna",
+      "latitude": 23.815065803,
+      "longitude": 89.30381817
+    },
+    {
+      "code": "304849",
+      "upazila": "Kishoreganj Sadar",
+      "district": "Kishoreganj",
+      "division": "Dhaka",
+      "latitude": 24.438305303,
+      "longitude": 90.7921828945
+    },
+    {
+      "code": "404442",
+      "upazila": "Kotchandpur",
+      "district": "Jhenaidah",
+      "division": "Khulna",
+      "latitude": 23.457614571,
+      "longitude": 89.00414102799999
+    },
+    {
+      "code": "405071",
+      "upazila": "Kumarkhali",
+      "district": "Kushtia",
+      "division": "Khulna",
+      "latitude": 23.8660641125,
+      "longitude": 89.22739873949999
+    },
+    {
+      "code": "554952",
+      "upazila": "Kurigram Sadar",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.832301972,
+      "longitude": 89.7031329175
+    },
+    {
+      "code": "405079",
+      "upazila": "Kushtia Sadar",
+      "district": "Kushtia",
+      "division": "Khulna",
+      "latitude": 23.830643675,
+      "longitude": 89.09039879900001
+    },
+    {
+      "code": "202245",
+      "upazila": "Kutubdia",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.8221458925,
+      "longitude": 91.86268842999999
+    },
+    {
+      "code": "201972",
+      "upazila": "Laksam",
+      "district": "Cumilla",
+      "division": "Chattogram",
+      "latitude": 23.241199917,
+      "longitude": 91.1041601835
+    },
+    {
+      "code": "205143",
+      "upazila": "Lakshmipur Sadar",
+      "district": "Lakshmipur",
+      "division": "Chattogram",
+      "latitude": 22.917850160500002,
+      "longitude": 90.8555787995
+    },
+    {
+      "code": "506944",
+      "upazila": "Lalpur",
+      "district": "Natore",
+      "division": "Rajshahi",
+      "latitude": 24.199856126500002,
+      "longitude": 88.98855471600001
+    },
+    {
+      "code": "309357",
+      "upazila": "Madhupur",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.653600193,
+      "longitude": 90.04847582650001
+    },
+    {
+      "code": "405557",
+      "upazila": "Magura Sadar",
+      "district": "Magura",
+      "division": "Khulna",
+      "latitude": 23.439863600499997,
+      "longitude": 89.40672674550001
+    },
+    {
+      "code": "305646",
+      "upazila": "Manikganj Sadar",
+      "district": "Manikganj",
+      "division": "Dhaka",
+      "latitude": 23.818242431,
+      "longitude": 90.0347160315
+    },
+    {
+      "code": "404161",
+      "upazila": "Manirampur",
+      "district": "Jashore",
+      "division": "Khulna",
+      "latitude": 23.0122644475,
+      "longitude": 89.21910730600001
+    },
+    {
+      "code": "306852",
+      "upazila": "Manohardi",
+      "district": "Narshingdi",
+      "division": "Dhaka",
+      "latitude": 24.158802837499998,
+      "longitude": 90.7214834005
+    },
+    {
+      "code": "605874",
+      "upazila": "Maulvibazar Sadar",
+      "district": "Maulvi Bazar",
+      "division": "Sylhet",
+      "latitude": 24.517295034,
+      "longitude": 91.721730576
+    },
+    {
+      "code": "453961",
+      "upazila": "Melandaha",
+      "district": "Jamalpur",
+      "division": "Mymensingh",
+      "latitude": 24.9667547105,
+      "longitude": 89.80858060599999
+    },
+    {
+      "code": "309366",
+      "upazila": "Mirzapur",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.1201701115,
+      "longitude": 90.108619976
+    },
+    {
+      "code": "558558",
+      "upazila": "Mithapukur",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.558927585,
+      "longitude": 89.275207807
+    },
+    {
+      "code": "400156",
+      "upazila": "Mollahat",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.8897517935,
+      "longitude": 89.7742335355
+    },
+    {
+      "code": "303558",
+      "upazila": "Muksudpur",
+      "district": "Gopalganj",
+      "division": "Dhaka",
+      "latitude": 23.266081153000002,
+      "longitude": 89.91258350800001
+    },
+    {
+      "code": "456165",
+      "upazila": "Muktagachha",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.731688901,
+      "longitude": 90.206918127
+    },
+    {
+      "code": "456152",
+      "upazila": "Mymensingh Sadar",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.767237072500002,
+      "longitude": 90.3455295945
+    },
+    {
+      "code": "302962",
+      "upazila": "Nagarkanda",
+      "district": "Faridpur",
+      "division": "Dhaka",
+      "latitude": 23.433931166500003,
+      "longitude": 89.8959286155
+    },
+    {
+      "code": "309376",
+      "upazila": "Nagarpur",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.070361499999997,
+      "longitude": 89.890985142
+    },
+    {
+      "code": "458967",
+      "upazila": "Nakla",
+      "district": "Sherpur",
+      "division": "Mymensingh",
+      "latitude": 24.9591029165,
+      "longitude": 90.18682948700001
+    },
+    {
+      "code": "458970",
+      "upazila": "Nalitabari",
+      "district": "Sherpur",
+      "division": "Mymensingh",
+      "latitude": 25.121425188499998,
+      "longitude": 90.18969234549999
+    },
+    {
+      "code": "506460",
+      "upazila": "Naogaon Sadar",
+      "district": "Naogaon",
+      "division": "Rajshahi",
+      "latitude": 24.8175803875,
+      "longitude": 88.89680438900001
+    },
+    {
+      "code": "306860",
+      "upazila": "Narsingdi Sadar",
+      "district": "Narshingdi",
+      "division": "Dhaka",
+      "latitude": 23.862513068,
+      "longitude": 90.719096451
+    },
+    {
+      "code": "552769",
+      "upazila": "Nawabganj",
+      "district": "Dinajpur",
+      "division": "Rangpur",
+      "latitude": 25.430280727,
+      "longitude": 89.0998009075
+    },
+    {
+      "code": "557364",
+      "upazila": "Nilphamari Sadar",
+      "district": "Nilphamari",
+      "division": "Rangpur",
+      "latitude": 25.9350886655,
+      "longitude": 88.8563010865
+    },
+    {
+      "code": "609160",
+      "upazila": "Osmani Nagar",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.701879626,
+      "longitude": 91.734613327
+    },
+    {
+      "code": "507655",
+      "upazila": "Pabna Sadar",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 23.9885817885,
+      "longitude": 89.27566941250001
+    },
+    {
+      "code": "404764",
+      "upazila": "Paikgachha",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.592232238,
+      "longitude": 89.3483812515
+    },
+    {
+      "code": "306863",
+      "upazila": "Palash",
+      "district": "Narshingdi",
+      "division": "Dhaka",
+      "latitude": 23.968494923,
+      "longitude": 90.6413397765
+    },
+    {
+      "code": "553267",
+      "upazila": "Palashbari",
+      "district": "Gaibandha",
+      "division": "Rangpur",
+      "latitude": 25.256177097,
+      "longitude": 89.3929173875
+    },
+    {
+      "code": "308273",
+      "upazila": "Pangsha",
+      "district": "Rajbari",
+      "division": "Dhaka",
+      "latitude": 23.78953653,
+      "longitude": 89.399063625
+    },
+    {
+      "code": "203051",
+      "upazila": "Parshuram",
+      "district": "Feni",
+      "division": "Chattogram",
+      "latitude": 23.2087304995,
+      "longitude": 91.44289509449999
+    },
+    {
+      "code": "100485",
+      "upazila": "Patharghata",
+      "district": "Barguna",
+      "division": "Barishal",
+      "latitude": 22.0938815035,
+      "longitude": 89.973354935
+    },
+    {
+      "code": "201561",
+      "upazila": "Patiya",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.2894063235,
+      "longitude": 91.9885479765
+    },
+    {
+      "code": "107895",
+      "upazila": "Patuakhali Sadar",
+      "district": "Patuakhali",
+      "division": "Barishal",
+      "latitude": 22.327962130000003,
+      "longitude": 90.338538521
+    },
+    {
+      "code": "202256",
+      "upazila": "Pekua",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.811065337000002,
+      "longitude": 91.9465942125
+    },
+    {
+      "code": "554918",
+      "upazila": "Phulbari",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.956318197500003,
+      "longitude": 89.5649570705
+    },
+    {
+      "code": "456181",
+      "upazila": "Phulpur",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.9411652355,
+      "longitude": 90.37548158999999
+    },
+    {
+      "code": "404769",
+      "upazila": "Phultala",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.955940828000003,
+      "longitude": 89.4523512705
+    },
+    {
+      "code": "558573",
+      "upazila": "Pirgachha",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.653660361,
+      "longitude": 89.41466859900001
+    },
+    {
+      "code": "558576",
+      "upazila": "Pirganj",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.4119489585,
+      "longitude": 89.27129519549999
+    },
+    {
+      "code": "457283",
+      "upazila": "Purbadhala",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 24.918581109999998,
+      "longitude": 90.6098132705
+    },
+    {
+      "code": "508182",
+      "upazila": "Puthia",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.428019575,
+      "longitude": 88.81389312350001
+    },
+    {
+      "code": "104284",
+      "upazila": "Rajapur",
+      "district": "Jhalokati",
+      "division": "Barishal",
+      "latitude": 22.55290426,
+      "longitude": 90.1309011825
+    },
+    {
+      "code": "554977",
+      "upazila": "Rajarhat",
+      "district": "Kurigram",
+      "division": "Rangpur",
+      "latitude": 25.802742186,
+      "longitude": 89.53973162049999
+    },
+    {
+      "code": "308276",
+      "upazila": "Rajbari Sadar",
+      "district": "Rajbari",
+      "division": "Dhaka",
+      "latitude": 23.6992689565,
+      "longitude": 89.6391350015
+    },
+    {
+      "code": "605880",
+      "upazila": "Rajnagar",
+      "district": "Maulvi Bazar",
+      "division": "Sylhet",
+      "latitude": 24.5495739515,
+      "longitude": 91.8539571375
+    },
+    {
+      "code": "205165",
+      "upazila": "Ramganj",
+      "district": "Lakshmipur",
+      "division": "Chattogram",
+      "latitude": 23.0898658435,
+      "longitude": 90.87453980250001
+    },
+    {
+      "code": "559486",
+      "upazila": "Ranisankail",
+      "district": "Thakurgaon",
+      "division": "Rangpur",
+      "latitude": 25.932759426,
+      "longitude": 88.24109019650001
+    },
+    {
+      "code": "404775",
+      "upazila": "Rupsa",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.819704254999998,
+      "longitude": 89.63574347049999
+    },
+    {
+      "code": "553282",
+      "upazila": "Sadullapur",
+      "district": "Gaibandha",
+      "division": "Rangpur",
+      "latitude": 25.4001864655,
+      "longitude": 89.420824107
+    },
+    {
+      "code": "557385",
+      "upazila": "Saidpur",
+      "district": "Nilphamari",
+      "division": "Rangpur",
+      "latitude": 25.800681926499998,
+      "longitude": 88.926164536
+    },
+    {
+      "code": "309385",
+      "upazila": "Sakhipur",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.3065915815,
+      "longitude": 90.180909918
+    },
+    {
+      "code": "507672",
+      "upazila": "Santhia",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 24.0534327525,
+      "longitude": 89.51166146349999
+    },
+    {
+      "code": "201294",
+      "upazila": "Sarail",
+      "district": "Brahmanbaria",
+      "division": "Chattogram",
+      "latitude": 24.0942285175,
+      "longitude": 91.1154927165
+    },
+    {
+      "code": "453985",
+      "upazila": "Sarishabari",
+      "district": "Jamalpur",
+      "division": "Mymensingh",
+      "latitude": 24.700828055,
+      "longitude": 89.82606657
+    },
+    {
+      "code": "408782",
+      "upazila": "Satkhira Sadar",
+      "district": "Satkhira",
+      "division": "Khulna",
+      "latitude": 22.708341631,
+      "longitude": 89.0414151745
+    },
+    {
+      "code": "305670",
+      "upazila": "Saturia",
+      "district": "Manikganj",
+      "division": "Dhaka",
+      "latitude": 23.961327861500003,
+      "longitude": 89.9994762255
+    },
+    {
+      "code": "207580",
+      "upazila": "Senbagh",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 22.99116868336835,
+      "longitude": 91.21306493498275
+    },
+    {
+      "code": "501085",
+      "upazila": "Shajahanpur",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.7621564445,
+      "longitude": 89.3845762885
+    },
+    {
+      "code": "501088",
+      "upazila": "Sherpur",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.630162614,
+      "longitude": 89.4283505545
+    },
+    {
+      "code": "458988",
+      "upazila": "Sherpur Sadar",
+      "district": "Sherpur",
+      "division": "Mymensingh",
+      "latitude": 24.995173022499998,
+      "longitude": 90.0135123945
+    },
+    {
+      "code": "501094",
+      "upazila": "Shibganj",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 25.016672171499998,
+      "longitude": 89.3165524045
+    },
+    {
+      "code": "306876",
+      "upazila": "Shibpur",
+      "district": "Narshingdi",
+      "division": "Dhaka",
+      "latitude": 24.023319448000002,
+      "longitude": 90.736199146
+    },
+    {
+      "code": "305682",
+      "upazila": "Singair",
+      "district": "Manikganj",
+      "division": "Dhaka",
+      "latitude": 23.7875614345,
+      "longitude": 90.15407174
+    },
+    {
+      "code": "508878",
+      "upazila": "Sirajganj Sadar",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.484920963,
+      "longitude": 89.6943333445
+    },
+    {
+      "code": "201586",
+      "upazila": "Sitakunda",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 22.5315133965,
+      "longitude": 91.64577396600001
+    },
+    {
+      "code": "203094",
+      "upazila": "Sonagazi",
+      "district": "Feni",
+      "division": "Chattogram",
+      "latitude": 22.849087717000003,
+      "longitude": 91.39356948700001
+    },
+    {
+      "code": "306704",
+      "upazila": "Sonargaon",
+      "district": "Naraynganj",
+      "division": "Dhaka",
+      "latitude": 23.6499678245,
+      "longitude": 90.5951119725
+    },
+    {
+      "code": "501095",
+      "upazila": "Sonatola",
+      "district": "Bogura",
+      "division": "Rajshahi",
+      "latitude": 24.990308638000002,
+      "longitude": 89.5206680765
+    },
+    {
+      "code": "605883",
+      "upazila": "Sreemangal",
+      "district": "Maulvi Bazar",
+      "division": "Sylhet",
+      "latitude": 24.307200147,
+      "longitude": 91.69986955
+    },
+    {
+      "code": "507683",
+      "upazila": "Sujanagar",
+      "district": "Pabna",
+      "division": "Rajshahi",
+      "latitude": 23.9063256015,
+      "longitude": 89.50778476400001
+    },
+    {
+      "code": "609162",
+      "upazila": "Sylhet Sadar",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.942983214,
+      "longitude": 91.84886923900001
+    },
+    {
+      "code": "408790",
+      "upazila": "Tala",
+      "district": "Satkhira",
+      "division": "Khulna",
+      "latitude": 22.729357231999998,
+      "longitude": 89.209479582
+    },
+    {
+      "code": "508889",
+      "upazila": "Tarash",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.4504567145,
+      "longitude": 89.35137541
+    },
+    {
+      "code": "404794",
+      "upazila": "Terokhada",
+      "district": "Khulna",
+      "division": "Khulna",
+      "latitude": 22.907523875,
+      "longitude": 89.6617060365
+    },
+    {
+      "code": "305994",
+      "upazila": "Tongibari",
+      "district": "Munshiganj",
+      "division": "Dhaka",
+      "latitude": 23.4803554965,
+      "longitude": 90.4470258675
+    },
+    {
+      "code": "456194",
+      "upazila": "Trishal",
+      "district": "Mymensingh",
+      "division": "Mymensingh",
+      "latitude": 24.5648491835,
+      "longitude": 90.4189212405
+    },
+    {
+      "code": "303591",
+      "upazila": "Tungipara",
+      "district": "Gopalganj",
+      "division": "Dhaka",
+      "latitude": 22.925305569,
+      "longitude": 89.9018131575
+    },
+    {
+      "code": "508894",
+      "upazila": "Ullahpara",
+      "district": "Sirajganj",
+      "division": "Rajshahi",
+      "latitude": 24.318819535499998,
+      "longitude": 89.5196345295
+    },
+    {
+      "code": "100694",
+      "upazila": "Wazirpur",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.865710482040516,
+      "longitude": 90.16497836881004
+    },
+    {
+      "code": "609194",
+      "upazila": "Zakiganj",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.927778357500003,
+      "longitude": 92.3524217415
+    },
+    {
+      "code": "107990",
+      "upazila": "Indurkani",
+      "district": "Pirojpur",
+      "division": "Barishal",
+      "latitude": 22.40261877814286,
+      "longitude": 89.887411855
+    },
+    {
+      "code": "503861",
+      "upazila": "Khetlal",
+      "district": "Joypurhat",
+      "division": "Rajshahi",
+      "latitude": 25.034864382000002,
+      "longitude": 89.1136601545
+    },
+    {
+      "code": "201547",
+      "upazila": "Lohagara",
+      "district": "Chattogram",
+      "division": "Chattogram",
+      "latitude": 21.991065984,
+      "longitude": 92.1087103555
+    },
+    {
+      "code": "406552",
+      "upazila": "Lohagara",
+      "district": "Narail",
+      "division": "Khulna",
+      "latitude": 23.2009105905,
+      "longitude": 89.62180993
+    },
+    {
+      "code": "609033",
+      "upazila": "Dowarabazar",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 25.0701384955,
+      "longitude": 91.5753422355
+    },
+    {
+      "code": "309338",
+      "upazila": "Gopalpur",
+      "district": "Tangail",
+      "division": "Dhaka",
+      "latitude": 24.567974986499998,
+      "longitude": 89.90151378050001
+    },
+    {
+      "code": "508131",
+      "upazila": "Durgapur",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.458172098,
+      "longitude": 88.76265431249999
+    },
+    {
+      "code": "457218",
+      "upazila": "Durgapur",
+      "district": "Netrokona",
+      "division": "Mymensingh",
+      "latitude": 25.090743955,
+      "longitude": 90.6935743065
+    },
+    {
+      "code": "201358",
+      "upazila": "Kachua",
+      "district": "Chandpur",
+      "division": "Chattogram",
+      "latitude": 23.358244163000002,
+      "longitude": 90.9027646635
+    },
+    {
+      "code": "405595",
+      "upazila": "Sreepur",
+      "district": "Magura",
+      "division": "Khulna",
+      "latitude": 23.600054544,
+      "longitude": 89.438866386
+    },
+    {
+      "code": "303386",
+      "upazila": "Sreepur",
+      "district": "Gazipur",
+      "division": "Dhaka",
+      "latitude": 24.206047696732327,
+      "longitude": 90.4437941627872
+    },
+    {
+      "code": "508172",
+      "upazila": "Paba",
+      "district": "Rajshahi",
+      "division": "Rajshahi",
+      "latitude": 24.403366171000002,
+      "longitude": 88.5908521355
+    },
+    {
+      "code": "400138",
+      "upazila": "Kachua",
+      "district": "Bagerhat",
+      "division": "Khulna",
+      "latitude": 22.655505484000003,
+      "longitude": 89.88061592849999
+    },
+    {
+      "code": "405094",
+      "upazila": "Mirpur",
+      "district": "Kushtia",
+      "division": "Khulna",
+      "latitude": 23.8965184075,
+      "longitude": 88.9801351375
+    },
+    {
+      "code": "405566",
+      "upazila": "Mohammadpur",
+      "district": "Magura",
+      "division": "Khulna",
+      "latitude": 23.395758207,
+      "longitude": 89.5507597395
+    },
+    {
+      "code": "558549",
+      "upazila": "Rangpur Sadar",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.751749948756544,
+      "longitude": 89.14982966947393
+    },
+    {
+      "code": "60916250",
+      "upazila": "Sylhet City Corporation",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 24.892379497,
+      "longitude": 91.867984329
+    },
+    {
+      "code": "10065150",
+      "upazila": "Barishal City Corporation",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.700108814,
+      "longitude": 90.3451202625
+    },
+    {
+      "code": "207521",
+      "upazila": "Companiganj",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 22.7754412895,
+      "longitude": 91.332349911
+    },
+    {
+      "code": "609127",
+      "upazila": "Companiganj",
+      "district": "Sylhet",
+      "division": "Sylhet",
+      "latitude": 25.075413806,
+      "longitude": 91.76139673649999
+    },
+    {
+      "code": "303330",
+      "upazila": "Gazipur Sadar",
+      "district": "Gazipur",
+      "division": "Dhaka",
+      "latitude": 24.120764547,
+      "longitude": 90.4009940915
+    },
+    {
+      "code": "603687",
+      "upazila": "Shayestaganj",
+      "district": "Habiganj",
+      "division": "Sylhet",
+      "latitude": 24.2762222425,
+      "longitude": 91.40743124299999
+    },
+    {
+      "code": "30675844",
+      "upazila": "Narayanganj City Corporation",
+      "district": "Naraynganj",
+      "division": "Dhaka",
+      "latitude": 23.649728433,
+      "longitude": 90.51558463
+    },
+    {
+      "code": "207585",
+      "upazila": "Subarnachar",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 22.645526785,
+      "longitude": 91.14980136899999
+    },
+    {
+      "code": "207536",
+      "upazila": "Hatiya",
+      "district": "Noakhali",
+      "division": "Chattogram",
+      "latitude": 22.333463172000002,
+      "longitude": 91.18304223800001
+    },
+    {
+      "code": "609032",
+      "upazila": "Dharampasha",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 24.9310430685,
+      "longitude": 91.053438287
+    },
+    {
+      "code": "609063",
+      "upazila": "Madhyanagar",
+      "district": "Sunamganj",
+      "division": "Sylhet",
+      "latitude": 25.090889341,
+      "longitude": 91.0181622645
+    },
+    {
+      "code": "202224",
+      "upazila": "Cox'sbazar Sadar",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.4690464025,
+      "longitude": 92.01335556149999
+    },
+    {
+      "code": "202232",
+      "upazila": "Eidgaon",
+      "district": "Cox's Bazar",
+      "division": "Chattogram",
+      "latitude": 21.554533308,
+      "longitude": 92.06364134500001
+    },
+    {
+      "code": "100632",
+      "upazila": "Gaurnadi",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.968658215417918,
+      "longitude": 90.24286515579966
+    },
+    {
+      "code": "100669",
+      "upazila": "Muladi",
+      "district": "Barishal",
+      "division": "Barishal",
+      "latitude": 22.928166797000003,
+      "longitude": 90.37315796850001
+    },
+    {
+      "code": "305440",
+      "upazila": "Kalkini",
+      "district": "Madaripur",
+      "division": "Dhaka",
+      "latitude": 23.0667602845,
+      "longitude": 90.2750881665
+    },
+    {
+      "code": "305454",
+      "upazila": "Madaripur Sadar",
+      "district": "Madaripur",
+      "division": "Dhaka",
+      "latitude": 23.201510123,
+      "longitude": 90.184728339
+    },
+    {
+      "code": "305480",
+      "upazila": "Rajoir",
+      "district": "Madaripur",
+      "division": "Dhaka",
+      "latitude": 23.224133698000003,
+      "longitude": 90.029800786
+    },
+    {
+      "code": "305487",
+      "upazila": "Shibchar",
+      "district": "Madaripur",
+      "division": "Dhaka",
+      "latitude": 23.375382123,
+      "longitude": 90.18270175250001
+    },
+    {
+      "code": "305418",
+      "upazila": "Dasar",
+      "district": "Madaripur",
+      "division": "Dhaka",
+      "latitude": 23.08395379,
+      "longitude": 90.166962464
+    },
+    {
+      "code": "303331",
+      "upazila": "Gazipur City Corporation",
+      "district": "Gazipur",
+      "division": "Dhaka",
+      "latitude": 23.987795556000002,
+      "longitude": 90.37149651249999
+    },
+    {
+      "code": "30260220",
+      "upazila": "Dhaka South City Corporation",
+      "district": "Dhaka",
+      "division": "Dhaka",
+      "latitude": 23.716454464999998,
+      "longitude": 90.425938871
+    },
+    {
+      "code": "558550",
+      "upazila": "Rangpur City Corporation",
+      "district": "Rangpur",
+      "division": "Rangpur",
+      "latitude": 25.751280035,
+      "longitude": 89.2395979995
+    }
+  ]
+}

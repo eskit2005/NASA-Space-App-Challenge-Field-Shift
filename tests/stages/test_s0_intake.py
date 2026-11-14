@@ -244,3 +244,44 @@ def test_intake_api_route() -> None:
     assert body["is_complete"] is True
     assert body["profile"]["area_ha"] == 12.5
     assert body["source"].startswith("S0 intake")
+
+
+def test_intake_extracts_soil_ph_and_irrigation_method() -> None:
+    turn = _turn(
+        "My farm is in Raninagar, Naogaon. 12.5 hectares. "
+        "8000 USD. 45000 m3. Land type MHL. "
+        "My lab soil pH is 6.5 and irrigation is tube well."
+    )
+    result = run(turn)
+    assert result.is_complete is True
+    assert result.profile is not None
+    assert result.profile.soil_overrides == {"ph": 6.5}
+    assert result.profile.attributes["irrigation_method"] == "tube_well"
+
+
+def test_post_completion_update_soil_ph_and_irrigation_method() -> None:
+    turn1 = _turn(
+        "My farm is in Raninagar, Naogaon. 12.5 hectares. "
+        "8000 USD. 45000 m3. Land type MHL."
+    )
+    result1 = run(turn1)
+    assert result1.is_complete is True
+    assert result1.profile.soil_overrides == {}
+
+    # Now add soil pH and irrigation method in follow-up turn
+    turn2 = IntakeTurn(
+        messages=[
+            *turn1.messages,
+            IntakeMessage(role="assistant", content=result1.reply),
+            IntakeMessage(role="farmer", content="My lab soil pH is 6.2 and irrigation method is canal."),
+        ],
+        draft=result1.draft,
+        farm_id=result1.profile.farm_id,
+    )
+    result2 = run(turn2)
+    assert result2.is_complete is True
+    assert result2.profile.soil_overrides == {"ph": 6.2}
+    assert result2.profile.attributes["irrigation_method"] == "canal"
+    assert "soil pH to 6.2" in result2.reply
+    assert "irrigation method to canal" in result2.reply
+

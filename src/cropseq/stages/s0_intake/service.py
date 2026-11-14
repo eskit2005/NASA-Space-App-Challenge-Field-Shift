@@ -12,6 +12,7 @@
 from pathlib import Path
 
 from cropseq.config import config
+from cropseq.context import load_pipeline_context
 from cropseq.contracts import IntakeReply, IntakeTurn
 
 from .adapters.llm import LlmExtractor
@@ -19,6 +20,7 @@ from .adapters.rules import RulesExtractor
 from .draft import build_profile, merge_fields, missing_fields
 from .ports import IntakeExtractor
 from .prompts import HOLD_ON, QUESTIONS
+from .qa import answer_farmer_question, detect_question
 
 DATA = Path(__file__).resolve().parents[4] / "data" / "data_shape"
 S0_INPUT = DATA / "s0_input.json"
@@ -49,6 +51,10 @@ def run(turn: IntakeTurn | None = None) -> IntakeReply:
     if turn is None:
         turn = IntakeTurn.model_validate_json(S0_INPUT.read_text(encoding="utf-8"))
 
+    # Load context saved from all stages in the single file
+    context = load_pipeline_context()
+    question = detect_question(turn.messages)
+
     extractor, warnings = _build_extractor()
     try:
         extracted = extractor.extract(turn.messages, turn.draft)
@@ -63,6 +69,36 @@ def run(turn: IntakeTurn | None = None) -> IntakeReply:
     warnings.extend(merge_warnings)
     missing = missing_fields(draft)
 
+    # Check if this draft was already complete prior to this turn
+    was_already_complete = not missing_fields(turn.draft)
+
+    # If the farmer asked a question, answer it using the pipeline context from the single file
+    if question is not None:
+        answer = answer_farmer_question(question, context)
+        if missing:
+            reply = f"{answer}\n\n{QUESTIONS[missing[0]]}"
+            return IntakeReply(
+                reply=reply,
+                draft=draft,
+                missing_fields=missing,
+                is_complete=False,
+                profile=None,
+                warnings=warnings,
+                source=f"S0 intake ({extractor.name})",
+            )
+        else:
+            profile = build_profile(turn, draft)
+            reply = answer if was_already_complete else f"{answer}\n\n{HOLD_ON}"
+            return IntakeReply(
+                reply=reply,
+                draft=draft,
+                missing_fields=[],
+                is_complete=True,
+                profile=profile,
+                warnings=warnings,
+                source=f"S0 intake ({extractor.name})",
+            )
+
     if missing:
         reply = extracted.reply.strip() if isinstance(extracted.reply, str) else ""
         return IntakeReply(
@@ -76,8 +112,29 @@ def run(turn: IntakeTurn | None = None) -> IntakeReply:
         )
 
     profile = build_profile(turn, draft)
+    reply = HOLD_ON
+    if not was_already_complete:
+        if draft.attributes.get("irrigation_method") is None:
+            reply = (
+                "Thanks - I have your core farm details! Hold on while I prepare your crop rotation options. "
+                "Optional: What irrigation method do you use (tube well, canal, pond, or rain-fed)? "
+                "You can select an option below, or click 'Proceed to Review' to use standard defaults."
+            )
+    else:
+        updated_notes: list[str] = []
+        if extracted.fields.get("soil_ph") is not None:
+            updated_notes.append(f"soil pH to {extracted.fields['soil_ph']}")
+        if extracted.fields.get("irrigation_method") is not None:
+            method_name = str(extracted.fields["irrigation_method"]).replace("_", " ")
+            updated_notes.append(f"irrigation method to {method_name}")
+        if updated_notes:
+            reply = (
+                f"Noted! Updated your {', and '.join(updated_notes)}. "
+                "Hold on while I update your crop rotation profile, or click 'Proceed to Review' to continue."
+            )
+
     return IntakeReply(
-        reply=HOLD_ON,
+        reply=reply,
         draft=draft,
         missing_fields=[],
         is_complete=True,

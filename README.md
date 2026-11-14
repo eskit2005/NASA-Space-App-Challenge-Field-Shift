@@ -20,6 +20,28 @@ The problem is big and messy, so we split it into stages. Each stage has one cle
 
 ---
 
+### Stage 0: Conversational Intake & Grounded Q&A Agent (`s0_intake`)
+Stage 0 provides a unified conversational interface (`POST /api/v1/intake/message`) that equips the agent with two simultaneous capabilities:
+1. **Adaptive Farmer Profile Collection:** Extracts farm parcel location (GPS coordinates or Bangladesh upazila name), area (ha), budget (USD), seasonal irrigation water quota (m³), and inundation land type (HL, MHL, MLL, LL, VLL).
+2. **Context-Grounded Q&A Engine:** In addition to collecting input, the agent answers farmer questions in real time. Whenever a farmer asks a question (e.g., *"Why this rotation?"*, *"What if I have less water?"*, *"Why not rice every season?"*, *"Which crop is riskiest?"*, *"What crops can grow here?"*), the agent reads the single consolidated pipeline context file (`data/pipeline_context.json`) and delivers factual, agronomic, and mathematical responses.
+   - If profile fields are still missing, it answers the question and politely prompts for the next required field.
+   - If the profile is complete, it delivers the answer directly.
+
+### Unified Pipeline Context Store (`data/pipeline_context.json`)
+Whatever gets produced in every stage across the entire pipeline is consolidated and saved into one single file (`data/pipeline_context.json`):
+* **S1 Farmer Profile:** Validated parcel inputs, area, budget, quota, location.
+* **S2 Raw Environment:** Raw SoilGrids soil profile and Open-Meteo weather parameters.
+* **S3 Environment:** Normalized topsoil pH, texture, organic carbon, and seasonal agroclimate.
+* **S4 Feasible Crops:** Feasible crop list per season filtered by BARC land-type rules.
+* **S5 Sequence Pool:** Valid 3-season candidate rotation sequences passing rotation rules.
+* **S6 Mathematical Solution:** Multi-objective evaluation across Gross Margin, Water Demand, and Soil Health Score, identifying the non-dominated Pareto frontier.
+* **S7 Explanation:** Human-auditable agronomic summary, structured reasoning, and evidence citations.
+* **S8 Final Result:** Audited recommendation payload with the winning sequence ID.
+
+This file acts as the single source of truth passed as context whenever a farmer asks questions.
+
+---
+
 ### Stage 1: Data Collection
 We gather inputs from farmers and from every available source worldwide: NASA, soil data, IoT sensors, and so on. Farmer input shouldn't be a plain question sheet. It should be a genuine conversation (AI-driven), so we get the maximum amount of input in the most natural way.
 
@@ -161,3 +183,188 @@ The layer takes everything that happened behind the scenes (calculations, filter
 * **How we generalize:** Turn it into a flexible agentic system by exposing the important tools to it.
 * Keep a human in the loop. A person watches whether the agent is choosing the right path and can redirect it.
 * This works as an interface for tweaking the system, removing the need to manually redesign the workflow for every location in the world.
+
+---
+
+## Complete Repository File Structure
+
+Below is the complete, comprehensive directory and file structure of the **FieldShift / CropSeq** project:
+
+```text
+cropseq/
+├── data/                                 # Datasets, reference catalogs, caches, and context
+│   ├── bangladesh/                       # Spatial boundaries and crop taxonomy for Bangladesh
+│   │   ├── crop_recommender.db           # SQLite database with BARC crop tables & local recommendations
+│   │   ├── crop_taxonomy.json            # Botanical family, water requirements, and crop metadata
+│   │   ├── upazila_centres.json          # 505 Upazila center point coordinates (lat/lon)
+│   │   └── upazila_polygons.json         # GeoJSON polygons for spatial point-in-polygon routing
+│   ├── crops/                            # Crop parameters
+│   │   └── crop_params.json              # Economic prices, input costs, and yield baseline parameters
+│   ├── data_shape/                       # Contract schemas and sample payloads for S0–S8
+│   │   ├── README.md                     # Schema documentation for stage input/output fixtures
+│   │   ├── s0_input.json / s0_output.json
+│   │   ├── s1_input.json / s1_output.json
+│   │   ├── s2_output.json
+│   │   ├── s3_output.json
+│   │   ├── s4_output.json
+│   │   ├── s5_output.json
+│   │   ├── s6_output.json
+│   │   ├── s7_output.json
+│   │   └── s8_output.json
+│   ├── bd_aez.json                       # Agro-Ecological Zones (AEZ) of Bangladesh
+│   ├── bd_barley.json                    # Barley regional trait calibration data
+│   ├── bd_calendar.json                  # Bangladesh seasonal crop calendar (Rabi, Kharif-1, Kharif-2)
+│   ├── cache.sqlite                      # Local SQLite cache for external API responses (SoilGrids, Open-Meteo)
+│   └── pipeline_context.json             # Single-file unified context store containing all pipeline outputs (S1–S8)
+│
+├── docs/                                 # Architectural documentation and specifications
+│   ├── Crop Rotation System Architecture.md # System architecture, agronomic models, and mathematical formulation
+│   └── s2_changes/                       # Environmental ingestion layer documentation
+│       └── s2_environment_documentation.md
+│
+├── frontend/                             # Single-page application (React 18 + TypeScript + Vite)
+│   ├── public/                           # Static assets
+│   │   ├── favicon.svg
+│   │   └── icons.svg
+│   ├── src/
+│   │   ├── assets/                       # Images and vector icons
+│   │   ├── components/                   # React UI components
+│   │   │   ├── ChatIntake.tsx            # Guided 7-step wizard & conversational mode switcher
+│   │   │   ├── ConversationalChat.tsx    # S0 AI chat intake, contextual suggestion chips, and follow-up Q&A
+│   │   │   ├── Header.tsx                # App navigation, live/mock switcher, and health indicator
+│   │   │   ├── LoadingScreen.tsx         # Multi-stage progress indicator during pipeline execution
+│   │   │   ├── ResultScreen.tsx          # Visual seasonal crop journey, outcome gauges, weather, and alternative plans
+│   │   │   ├── ReviewScreen.tsx          # Profile review with inline editors for size, land type, soil pH, and irrigation
+│   │   │   └── UpazilaPicker.tsx         # Searchable picker for 505 Bangladesh upazilas + manual GPS coordinates
+│   │   ├── data/
+│   │   │   └── upazilas.json             # Bundled upazila search dataset for offline/client-side picker
+│   │   ├── mock/
+│   │   │   └── mockData.ts               # Offline fallback mock data for testing and demonstrations
+│   │   ├── types/
+│   │   │   └── api.ts                    # TypeScript interface definitions matching backend Pydantic contracts
+│   │   ├── utils/
+│   │   │   ├── api.ts                    # API client fetching `/intake/message`, `/recommendations/optimize`, `/health`
+│   │   │   ├── cropNames.ts              # Crop names and seasonal translation helpers
+│   │   │   └── helpers.ts                # Formatting, Pareto ranking, soil rating, and summary humanization
+│   │   ├── App.tsx                       # Main application shell and screen router
+│   │   ├── config.ts                     # API base URL configuration
+│   │   ├── index.css                     # Earthy, high-contrast farmer-first stylesheet with responsive utilities
+│   │   └── main.tsx                      # Vite React application entrypoint
+│   ├── index.html                        # HTML template
+│   ├── package.json                      # Frontend dependencies & npm scripts
+│   ├── tsconfig.json                     # TypeScript compiler configuration
+│   └── vite.config.ts                    # Vite build & development proxy configuration
+│
+├── src/cropseq/                          # Backend core package (FastAPI + Pydantic + Agronomic Pipeline)
+│   ├── __init__.py                       # Package initializer
+│   ├── api/                              # REST API endpoints
+│   │   ├── __init__.py
+│   │   ├── main.py                       # FastAPI application entrypoint with CORS, health check, and routes
+│   │   ├── reference.py                  # Reference data endpoints (/api/v1/reference/*)
+│   │   ├── routes.py                     # Primary pipeline routes (/recommendations/optimize and /intake/message)
+│   │   └── security.py                   # Request validation and security helpers
+│   ├── contracts/                        # Pydantic v2 data models & validation schemas
+│   │   ├── __init__.py
+│   │   ├── common.py                     # Shared primitives, location coordinates, and units
+│   │   ├── crops.py                      # Crop descriptors and taxonomy models
+│   │   ├── environment.py                # Raw and normalized soil & agroclimatic contracts
+│   │   ├── evaluation.py                 # Evaluated sequences, metrics, and Pareto front schemas
+│   │   ├── explanation.py                # Explanation sections, evidence references, and summary models
+│   │   ├── farmer.py                     # Farmer profile, parcel attributes, and priorities
+│   │   ├── intake.py                     # Intake messages, draft state, and chat reply contracts
+│   │   └── sequences.py                  # Candidate rotation sequence schemas
+│   ├── stages/                           # Modular pipeline stages (S0 through S8)
+│   │   ├── __init__.py
+│   │   ├── s0_intake/                    # Conversational intake agent & context-grounded Q&A
+│   │   │   ├── adapters/                 # LLM and rule-based extraction adapters
+│   │   │   │   ├── llm.py                # LLM structured extraction adapter
+│   │   │   │   └── rules.py              # Regex & deterministic pattern extraction adapter
+│   │   │   ├── draft.py                  # FarmerDraft merging and validation into FarmerProfile
+│   │   │   ├── places.py                 # Upazila resolution & polygon point-in-polygon routing
+│   │   │   ├── ports.py                  # Intake extractor port protocol
+│   │   │   ├── prompts.py                # System prompts, question bank, and structured schemas
+│   │   │   ├── qa.py                     # Pipeline context question detection and evidence-grounded answerer
+│   │   │   ├── rules.py                  # Land type, units, and coordinate normalization rules
+│   │   │   └── service.py                # Stage 0 orchestration service (POST /api/v1/intake/message)
+│   │   ├── s1_intake/                    # Profile validation & parcel bounding
+│   │   │   └── service.py
+│   │   ├── s2_environment/               # Environmental data ingestion & external API clients
+│   │   │   ├── adapters/                 # Open-Meteo, NASA POWER, and ISRIC SoilGrids clients
+│   │   │   ├── cache/                    # SQLite response caching layer
+│   │   │   ├── ports.py                  # Environmental data provider protocols
+│   │   │   └── service.py                # Stage 2 environment fetcher service
+│   │   ├── s3_normalization/             # Data cleaning, unit harmonization & agroclimate synthesis
+│   │   │   ├── adapters/                 # FAO-56 crop coefficient reference adapters
+│   │   │   ├── climate.py                # Multi-year monthly rainfall and ET0 aggregation
+│   │   │   ├── land_type.py              # Inundation flood depth classification (HL/MHL/MLL/LL/VLL)
+│   │   │   ├── ports.py                  # Normalization protocols
+│   │   │   ├── service.py                # Stage 3 normalization service
+│   │   │   └── soil.py                   # SoilGrids property conversion and lab test overrides
+│   │   ├── s4_filtering/                 # Agronomic feasibility filtering & BARC crop selection
+│   │   │   ├── adapters/                 # BARC database adapter and fixture providers
+│   │   │   ├── fixture.py                # Static fallback crop databases
+│   │   │   ├── ports.py                  # Crop registry provider protocols
+│   │   │   ├── router.py                 # Upazila-to-AEZ polygon router
+│   │   │   ├── selection.py              # Seasonal suitability rules
+│   │   │   ├── service.py                # Stage 4 filtering service
+│   │   │   └── taxonomy.py               # Botanical family classification
+│   │   ├── s5_sequences/                 # 3-season sequence combinatorics & agronomic rules
+│   │   │   ├── generation.py             # Cartesian product generation & family succession constraints
+│   │   │   └── service.py                # Stage 5 sequence generation service
+│   │   ├── s6_optimization/              # Multi-objective Pareto optimization & Compromise Programming
+│   │   │   ├── engine.py                 # Fast non-dominated sorting & weighted distance ranking
+│   │   │   ├── params.py                 # Crop coefficient (Kc), budget, and water demand calculators
+│   │   │   └── service.py                # Stage 6 multi-criteria scoring service
+│   │   ├── s7_explanation/               # Evidence-grounded explainability layer
+│   │   │   ├── adapters/                 # LLM and deterministic template explainers
+│   │   │   ├── ports.py                  # Explainer protocols
+│   │   │   ├── prompts.py                # Structured explanation prompt templates
+│   │   │   ├── select.py                 # Representative sequence selectors
+│   │   │   └── service.py                # Stage 7 explanation generator service
+│   │   └── s8_audit/                     # Verification guardrails, assertion checks, and auditing
+│   │       └── service.py                # Stage 8 final payload auditor
+│   ├── config.py                         # Application configuration settings
+│   ├── context.py                        # Single-file pipeline context store generator (data/pipeline_context.json)
+│   ├── errors.py                         # Custom application exception classes
+│   ├── http.py                           # Resilient HTTP client with retry and backoff logic
+│   ├── pipeline.py                       # End-to-end pipeline orchestrator executing S1–S8
+│   └── py.typed                          # PEP 561 inline type indicator
+│
+├── tests/                                # Comprehensive test suite (145 pytest cases)
+│   ├── api/                              # HTTP API endpoint tests
+│   │   └── test_api_http.py
+│   ├── contracts/                        # Pydantic contract fixture tests
+│   │   └── test_fixtures.py
+│   ├── e2e/                              # End-to-end pipeline integration tests
+│   │   └── test_pipeline.py
+│   ├── live/                             # Live external API network tests (optional)
+│   │   └── test_external_apis.py
+│   ├── stages/                           # Unit tests for each individual pipeline stage
+│   │   ├── test_rule2_imports.py         # Stage import boundary tests
+│   │   ├── test_s0_intake.py             # S0 intake chat, extraction, and updates tests
+│   │   ├── test_s0_qa.py                 # S0 grounded Q&A reasoning tests
+│   │   ├── test_s1_intake.py             # S1 profile validation tests
+│   │   ├── test_s2_adapters.py           # S2 API adapter tests
+│   │   ├── test_s2_cache.py              # S2 SQLite caching tests
+│   │   ├── test_s2_service.py            # S2 environment service tests
+│   │   ├── test_s3_fao_adapter.py        # S3 FAO reference tests
+│   │   ├── test_s3_normalization.py      # S3 soil and climate normalization tests
+│   │   ├── test_s4_filtering.py          # S4 BARC filtering and router tests
+│   │   ├── test_s5_sequences.py          # S5 rotation rules and combinatorics tests
+│   │   ├── test_s6_scoring.py            # S6 Pareto optimization and scoring tests
+│   │   ├── test_s7_explanation.py        # S7 explanation and citation tests
+│   │   └── test_s8_audit.py              # S8 auditing and guardrail tests
+│   ├── conftest.py                       # Pytest test fixtures and configuration
+│   ├── stage_range.py                    # Stage slicing test helper
+│   └── test_config.py                    # Configuration loading tests
+│
+├── Dockerfile                            # Production container definition
+├── FRONTEND_SPEC.md                      # Complete frontend architecture and API specification
+├── LICENSE                               # Open source license
+├── README.md                             # Project overview, architecture, math formulation, and file structure
+├── pyproject.toml                        # Python project configuration and dependency specifications
+├── render.yaml                           # Render cloud deployment blueprint
+├── requirement.txt                       # Python pip dependencies
+└── uv.lock                               # Resolved dependency lockfile
+```
+

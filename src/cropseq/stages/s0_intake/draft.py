@@ -236,6 +236,14 @@ def build_profile(turn: IntakeTurn, draft: FarmerDraft) -> FarmerProfile:
         raise InvalidInput("Cannot build a profile; a required value is missing.")
 
     farm_id = (turn.farm_id or "").strip() or _derived_farm_id(draft)
+    priorities = dict(draft.priorities) if draft.priorities else {
+        "gross_margin": 0.5,
+        "water_m3": 0.3,
+        "soil_score": 0.2,
+    }
+    priorities.setdefault("gross_margin", 0.5)
+    priorities.setdefault("water_m3", 0.3)
+    priorities.setdefault("soil_score", 0.2)
     return FarmerProfile(
         farm_id=farm_id,
         location=draft.location,
@@ -243,7 +251,7 @@ def build_profile(turn: IntakeTurn, draft: FarmerDraft) -> FarmerProfile:
         budget_usd=draft.budget_usd,
         irrigation_quota_m3=draft.irrigation_quota_m3,
         land_type=draft.land_type or "MHL",
-        priorities=draft.priorities,
+        priorities=priorities,
         soil_overrides=draft.soil_overrides,
         attributes=draft.attributes,
     )

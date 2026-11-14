@@ -125,6 +125,10 @@ class Config(BaseSettings):
     # Mock crop economics + nitrogen traits used by S6. All values are
     # placeholders until real agronomic data is supplied.
     crop_params: str = Field(default="data/crops/crop_params.json", alias="CROP_PARAMS")
+    # Single file saving whatever got produced in every stage (S1..S8)
+    pipeline_context_file: str = Field(
+        default="data/pipeline_context.json", alias="PIPELINE_CONTEXT_FILE"
+    )
 
     @model_validator(mode="after")
     def _sync_adapters(self) -> Config:
